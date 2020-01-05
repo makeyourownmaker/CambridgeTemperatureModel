@@ -1,4 +1,8 @@
 
+# Cambridge Weather History Inaccuracies
+# https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html
+
+
 # On 31st July 2008, the readings for humidity pressure and wind speed stuck at about 6pm BST. The logger was reset on 1st August at about 9:00am
 weather.08.08.01 <- weather.raw[ds > '2008-08-01 00:00:00']
 weather.08.08.01.cc <-  weather.08.08.01[complete.cases(weather.08.08.01)]
@@ -121,8 +125,6 @@ text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd > 20*mean(cooksd, na.r
 abline(h = 10*mean(cooksd, na.rm=T), col="red")  # add cutoff line
 
 table(cooksd > 10*mean(cooksd, na.rm=T))
-# FALSE   TRUE
-#179558    287
 
 influential <- as.numeric(names(cooksd)[(cooksd > 10*mean(cooksd, na.rm=T))])  # influential row numbers
 head(weather.08.08.01.cc[influential, ])
