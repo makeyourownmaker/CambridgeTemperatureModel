@@ -133,6 +133,6 @@ summary(weather.08.08.01.cc[-influential, .(temperature, humidity, dew.point, pr
 weather.08.08.01.cc <- weather.08.08.01.cc[-influential,]
 
 
-saveRDS(weather.08.08.01.cc[, .(temperature, dew.point, humidity, pressure, wind.speed.mean, wind.bearing.mean, ds)], "CamMetCleanish.RData")
+saveRDS(weather.08.08.01.cc[, .(temperature, dew.point, humidity, pressure, wind.speed.mean, wind.bearing.mean, ds)], "data/CamMetCleanish.RData")
 
 
