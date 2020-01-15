@@ -19,7 +19,7 @@ weather.raw[, time:=strftime(ds, format = "%H:%M:%S")]
 weather.raw[, secs:=as.numeric(as.difftime(time))]
 
 # From: https://www.cl.cam.ac.uk/research/dtg/weather/
-#   "There is a known issue with the sunlight and rain sensors sometimes over-reporting readings. 
+#   "There is a known issue with the sunlight and rain sensors sometimes over-reporting readings.
 #    We are investigating how best to fix this and we should be able to correct archived records once the problem is resolved."
 # INSTEAD I replace rainfall and/or sunshine with binary - 0 if 0, 1 if > 0
 weather.raw[, rainy:=ifelse(rainfall > 0, 1, 0)]
@@ -45,7 +45,7 @@ colnames(weather.rise.set) <- "date"
 
 # Approx. 15 secs each for next two commands
 weather.rise.set[, sunrise:=round_date(getSunlightTimes(date=date, lat=52.210922, lon=0.091964, keep=c("sunrise", "sunset"))$sunrise, unit="1 minute")]
-weather.rise.set[,  sunset:=round_date(getSunlightTimes(date=date, lat=52.210922, lon=0.091964, keep=c("sunrise", "sunset"))$sunset, unit="1 minute")]
+weather.rise.set[,  sunset:=round_date(getSunlightTimes(date=date, lat=52.210922, lon=0.091964, keep=c("sunrise", "sunset"))$sunset,  unit="1 minute")]
 
 setkey(weather.raw, "date")
 setkey(weather.rise.set, "date")
