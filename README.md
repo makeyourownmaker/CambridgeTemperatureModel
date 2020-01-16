@@ -51,6 +51,11 @@ The [Digital Technology Group](https://www.cl.cam.ac.uk/research/dtg/) in the Ca
 
 I have no affiliation with Cambridge University, the Computer Laboratory or the Digital Technology Group.
 
+I live close to this weather station.  When I started looking at this data the UK Met Office
+were updating forecasts every 2 hours.  I thought I could produce a more frequent
+[nowcast](https://en.wikipedia.org/wiki/Nowcasting_(meteorology)) using time series or
+machine learning methods.
+
 
 ### Variables
 
