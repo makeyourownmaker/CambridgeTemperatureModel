@@ -7,6 +7,8 @@
 
 Time series and other models for Cambridge UK temperature forecasts in R
 
+If you like CambridgeTemperatureModel, give it a star, or fork it and contribute!
+
 
 ## Installation/Usage
 
