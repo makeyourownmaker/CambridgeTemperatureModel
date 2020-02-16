@@ -136,5 +136,5 @@ weather.08.08.01.cc <- weather.08.08.01.cc[-influential,]
 
 
 saveRDS(weather.08.08.01.cc[, .(temperature, dew.point, humidity, pressure, wind.speed.mean, wind.bearing.mean, ds)], "data/CamMetCleanish.RData")
-
+save.image("data/CambridgeTemperatureModel.RData")
 
