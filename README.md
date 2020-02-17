@@ -102,7 +102,7 @@ The Cambridge temperature data contains two seasonal components:
 
 The two figures below show the daily and yearly components found using the
 [prophet package](https://cran.r-project.org/web/packages/prophet/).  This
-code is briefly described in the Files sub-section.
+code is briefly described in the Files subsection.
 
 1. daily seasonal trend component
 ![daily seasonal trend component
@@ -114,7 +114,9 @@ code is briefly described in the Files sub-section.
 
 The daily component shows a smooth change throughout the period.
 The less smooth yearly component may indicate more data is required and/or
-additional/improved cleaning and/or some over-fitting is present.
+additional/improved cleaning and/or some overfitting is present.
+The yearly component is probably overfitting and should be replaced
+with a custom component with lower fourier_order parameter.
 
 
 ### Files
@@ -131,6 +133,9 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 
 ## Roadmap
 
+* Improve prophet model
+  * The yearly component is probably overfitting and should be replaced
+    with a custom component with lower fourier_order parameter.
 * Improve documentation
   * Summarise models and results
 * Add more models
