@@ -106,11 +106,11 @@ code is briefly described in the Files sub-section.
 
 1. daily seasonal trend component
 ![daily seasonal trend component
-](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.daily.componet.01.png "daily seasonal trend component")
+](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.daily.component.01.png "daily seasonal trend component")
 
 2. yearly seasonal trend component
 ![yearly seasonal trend component
-](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.yearly.componet.01.png "yearly seasonal trend component")
+](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.yearly.component.01.png "yearly seasonal trend component")
 
 The daily component shows a smooth change throughout the period.
 The less smooth yearly component may indicate more data is required and/or
