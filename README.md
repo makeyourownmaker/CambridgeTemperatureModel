@@ -92,6 +92,29 @@ was used to remove the remaining influential observations but some problems may 
 long series of repeated values.  The remaining measurements have no missing values.
 
 
+### Seasonality
+
+In general, time series can be decomposed into seasonal and trend components.
+
+The Cambridge temperature data contains two seasonal components:
+1. daily
+2. yearly
+
+The two figures below show the daily and yearly components found using the
+[prophet package](https://cran.r-project.org/web/packages/prophet/).  This
+code is briefly described in the Files sub-section.
+
+1. daily seasonal trend component
+![daily seasonal trend component](https://github.com/makeyourownmaker/CambridgeTemperatureModel/figures/prophet.daily.componet.01.png "daily seasonal trend component")
+
+2. yearly seasonal trend component
+![yearly seasonal trend component](https://github.com/makeyourownmaker/CambridgeTemperatureModel/figures/prophet.yearly.componet.01.png "yearly seasonal trend component")
+
+The daily component shows a smooth change throughout the period.
+The less smooth yearly component may indicate more data is required and/or
+additional/improved cleaning.
+
+
 ### Files
 
 These files demonstrate how to build models for the Cambridge UK temperature data:
@@ -100,6 +123,8 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * Download data, set variable types and adds some date and time related fields
  * [2-clean.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/2-clean.R)
    * Remove known [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) and other unrealistic measurements
+ * [3-prophet.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3-prophet.R)
+   * Build multi-seasonal model using [prophet package](https://cran.r-project.org/web/packages/prophet/).
 
 
 ## Roadmap
