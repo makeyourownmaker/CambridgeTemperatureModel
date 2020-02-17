@@ -31,7 +31,7 @@ png("figures/prophet.yearly.component.01.png", units = "in", width = 5, height =
 pro.mod.comps[2]
 dev.off()
 
-png("figures/prophet.daily.componet.01.png", units = "in", width = 5, height = 4, res = 600)
+png("figures/prophet.daily.component.01.png", units = "in", width = 5, height = 4, res = 600)
 pro.mod.comps[3]
 dev.off()
 
