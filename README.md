@@ -114,7 +114,7 @@ code is briefly described in the Files sub-section.
 
 The daily component shows a smooth change throughout the period.
 The less smooth yearly component may indicate more data is required and/or
-additional/improved cleaning.
+additional/improved cleaning and/or some over-fitting is present.
 
 
 ### Files
