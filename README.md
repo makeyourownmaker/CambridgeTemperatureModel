@@ -94,7 +94,7 @@ long series of repeated values.  The remaining measurements have no missing valu
 
 ### Baselines
 
-The following tables show accuracy metrics for four baseline forecasts:
+The following tables show accuracy metrics for four baseline nowcast methods:
 
 | Method                         | RMSE     | MAE      | MAPE     |
 | ------------------------------ | -------: | -------: | -------: |
@@ -107,13 +107,12 @@ These metrics are calculated in the baselines file briefly
 described in the Files subsection.
 
 1. The mean temperature method simply uses the mean temperature across
-the entire data set as the forecast.
+the entire data set as the nowcast.
 2. The persistent temperature method is a popular benchmark in the
-meteorology literature.  The
+meteorology literature.  It uses the previous temperature value for the
+nowcast.  The
 [forecast package](https://cran.r-project.org/web/packages/forecast/)
-documentation refers to
-it as the naive method. It uses the previous temperature value
-for the forecast.
+documentation refers to it as the naive method.
 3. Simple exponential smoothing uses
 ["weighted averages, where the weights decrease exponentially as observations come from further in the past"](https://otexts.com/fpp2/ses.html).
 4. [Holt](https://otexts.com/fpp2/holt.html) extended simple exponential
@@ -132,7 +131,7 @@ The Cambridge temperature data contains two seasonal components:
 1. daily
 2. yearly
 
-The two figures below show the daily and yearly components found using the
+The next two figures show the daily and yearly components found using the
 [prophet package](https://cran.r-project.org/web/packages/prophet/).  This
 code is briefly described in the Files subsection.
 
@@ -163,9 +162,9 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
  * I'd usually do some exploratory data analysis but that is more or less covered in a separate repository
    * [Cambridge University Computer Laboratory Weather Station R Shiny Web App](https://github.com/makeyourownmaker/ComLabWeatherShiny)
  * [4.01-baselines.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.01-baselines.R)
-   * Build baseline models and calculate forecast accuracy using [forecast package](https://cran.r-project.org/web/packages/forecast/).
+   * Build baseline models and calculate nowcast accuracy using the [forecast package](https://cran.r-project.org/web/packages/forecast/).
  * [4.02-prophet.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.02-prophet.R)
-   * Build multi-seasonal model using [prophet package](https://cran.r-project.org/web/packages/prophet/).
+   * Build multi-seasonal model using the [prophet package](https://cran.r-project.org/web/packages/prophet/).
 
 
 ## Roadmap
