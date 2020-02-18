@@ -96,12 +96,12 @@ long series of repeated values.  The remaining measurements have no missing valu
 
 The following tables show accuracy metrics for four baseline forecasts:
 
-| Method                         | RMSE    | MAE     | MAPE     |
-| ------------------------------ | ------: | ------: | -------: |
-| Mean temperature               | 64.46   | 52.63   | 249.91   |
-| Persistent temperature         | 6.26    | 4.13    | 9.49     |
-| Simple exponential smoothing   | 6.05    | 4.03    | 9.81     |
-| Holt exponential smoothing     | 5.62    | 3.94    | 10.25    |
+| Method                         | RMSE     | MAE      | MAPE     |
+| ------------------------------ | -------: | -------: | -------: |
+| Mean temperature               | 64.46    | 52.63    | 249.91   |
+| Persistent temperature         | 6.26     | 4.13     | **9.49** |
+| Simple exponential smoothing   | 6.05     | 4.03     | 9.81     |
+| Holt exponential smoothing     | **5.62** | **3.94** | 10.25    |
 
 These metrics are calculated in the baselines file briefly
 described in the Files subsection.
@@ -144,11 +144,12 @@ code is briefly described in the Files subsection.
 
 <img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.yearly.component.01.png" alt="yearly seasonal trend component" width="50%" height="50%"/>
 
-The daily component shows a smooth change throughout the period.
-The less smooth yearly component may indicate more data is required and/or
-additional/improved cleaning and/or some overfitting is present.
-The yearly component is probably overfitting and should be replaced
-with a custom component with lower fourier_order parameter.
+The daily and yearly components show smooth change throughout.
+
+The forecast package supports multi-seasonal models using the tbats() function.
+I like the forecast package and recommend it but the prophet package is faster
+with this data set.  I have not explored the simpler mstl() function from the
+forecast package.
 
 
 ### Files
@@ -169,13 +170,17 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 
 ## Roadmap
 
-* Improve prophet model
-  * The yearly component is probably overfitting and should be replaced
-    with a custom component with lower fourier_order parameter.
+* Enhance prophet model
+  * Benchmark against the baseline models
+  * Explore adding additional regressors
+* Add more time series models
+  * [bsts](https://cran.r-project.org/web/packages/bsts/index.html) if it supports multi-seasonality
+    * spike-and-slab priors are quite appealing for adding regressors
+* Add some statistical learning models
+  * Support vector machines, modern neural networks etc may have some utility
+  * GAMs and Gaussian processes may also prove worthwhile
 * Improve documentation
-  * Summarise models and results
-* Add more models
-  * forecast, prophet ...
+  * Summarise cross-validation, models etc
 * Lint scripts with [goodpractice](https://cran.r-project.org/web/packages/goodpractice/index.html)
 
 

@@ -8,7 +8,7 @@ library(prophet)
 weather.proph <- weather.08.08.01.cc[, .(ds=as.POSIXct(timestamp, tz="GMT"), y=temperature)]
 
 date() # approx 7 mins
-m.proph <- prophet(weather.proph, daily.seasonality=TRUE, weekly.seasonality=FALSE, yearly.seasonality=TRUE)
+m.proph <- prophet(weather.proph, daily.seasonality=TRUE, weekly.seasonality=FALSE, yearly.seasonality=2)
 date()
 
 # All of these take approx 15 mins! WTF?
@@ -27,11 +27,11 @@ pro.mod.comps <- prophet_plot_components(m.proph, forecast.proph)
 
 ifelse(!dir.exists(file.path("figures")), dir.create(file.path("figures")), FALSE)
 
-png("figures/prophet.yearly.component.01.png", units = "in", width = 4, height = 3, res = 600)
+png("figures/prophet.yearly.component.01.png", units = "in", width = 6, height = 4, res = 600)
 pro.mod.comps[2]
 dev.off()
 
-png("figures/prophet.daily.component.01.png", units = "in", width = 4, height = 3, res = 600)
+png("figures/prophet.daily.component.01.png", units = "in", width = 6, height = 4, res = 600)
 pro.mod.comps[3]
 dev.off()
 
