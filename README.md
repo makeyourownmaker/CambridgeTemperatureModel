@@ -137,12 +137,14 @@ The two figures below show the daily and yearly components found using the
 code is briefly described in the Files subsection.
 
 1. daily seasonal trend component
+
 <img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.daily.component.01.png"
-alt="daily seasonal trend component" width="50%" height="50%"/>
+alt="daily seasonal trend component" width="50%" height="50%" align="right"/>
 
 2. yearly seasonal trend component
+
 <img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.yearly.component.01.png"
-alt="yearly seasonal trend component" width="50%" height="50%"/>
+alt="yearly seasonal trend component" width="50%" height="50%" align="right"/>
 
 The daily component shows a smooth change throughout the period.
 The less smooth yearly component may indicate more data is required and/or
