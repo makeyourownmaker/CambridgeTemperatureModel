@@ -36,9 +36,3 @@ pro.mod.comps[3]
 dev.off()
 
 
-cv.proph <- cross_validation(m.proph, initial = '11 years', period = '2 hours', horizon = '2 days')
-cv.proph
-
-
-save.image("data/CambridgeTemperatureModelProphet.RData")
-
