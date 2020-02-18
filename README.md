@@ -92,6 +92,38 @@ was used to remove the remaining influential observations but some problems may 
 long series of repeated values.  The remaining measurements have no missing values.
 
 
+### Baselines
+
+The following tables show accuracy metrics for four baseline forecasts:
+
+| Method                         | RMSE    | MAE     | MAPE     |
+| ------------------------------ | ------: | ------: | -------: |
+| Mean temperature               | 64.46   | 52.63   | 249.91   |
+| Persistent temperature         | 6.26    | 4.13    | 9.49     |
+| Simple exponential smoothing   | 6.05    | 4.03    | 9.81     |
+| Holt exponential smoothing     | 5.62    | 3.94    | 10.25    |
+
+These metrics are calculated in the baselines file briefly
+described in the Files subsection.
+
+1. The mean temperature method simply uses the mean temperature across
+the entire data set as the forecast.
+2. The persistent temperature method is a popular benchmark in the
+meteorology literature.  The
+[forecast package](https://cran.r-project.org/web/packages/forecast/)
+documentation refers to
+it as the naive method. It uses the previous temperature value
+for the forecast.
+3. Simple exponential smoothing uses
+["weighted averages, where the weights decrease exponentially as observations come from further in the past"](https://otexts.com/fpp2/ses.html).
+4. [Holt](https://otexts.com/fpp2/holt.html) extended simple exponential
+smoothing to include data with a trend.
+
+Holt-Winters exponential smoothing and ARIMA models are not suitable
+for this temperature data due to multi-seasonality which is explained
+next.
+
+
 ### Seasonality
 
 In general, time series can be decomposed into seasonal and trend components.
@@ -127,7 +159,11 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * Download data, set variable types and adds some date and time related fields
  * [2-clean.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/2-clean.R)
    * Remove known [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) and other unrealistic measurements
- * [3-prophet.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3-prophet.R)
+ * I'd usually do some exploratory data analysis but that is more or less covered in a separate repository
+   * [Cambridge University Computer Laboratory Weather Station R Shiny Web App](https://github.com/makeyourownmaker/ComLabWeatherShiny)
+ * [4.01-baselines.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4-baselines.R)
+   * Build baseline models and calculate forecast accuracy using [forecast package](https://cran.r-project.org/web/packages/forecast/).
+ * [4.02-prophet.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3-prophet.R)
    * Build multi-seasonal model using [prophet package](https://cran.r-project.org/web/packages/prophet/).
 
 
