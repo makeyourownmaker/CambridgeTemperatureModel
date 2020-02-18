@@ -27,13 +27,17 @@ pro.mod.comps <- prophet_plot_components(m.proph, forecast.proph)
 
 ifelse(!dir.exists(file.path("figures")), dir.create(file.path("figures")), FALSE)
 
-png("figures/prophet.yearly.component.01.png", units = "in", width = 5, height = 4, res = 600)
+png("figures/prophet.yearly.component.01.png", units = "in", width = 4, height = 3, res = 600)
 pro.mod.comps[2]
 dev.off()
 
-png("figures/prophet.daily.component.01.png", units = "in", width = 5, height = 4, res = 600)
+png("figures/prophet.daily.component.01.png", units = "in", width = 4, height = 3, res = 600)
 pro.mod.comps[3]
 dev.off()
+
+
+cv.proph <- cross_validation(m.proph, initial = '11 years', period = '2 hours', horizon = '2 days')
+cv.proph
 
 
 save.image("data/CambridgeTemperatureModelProphet.RData")
