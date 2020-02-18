@@ -139,12 +139,12 @@ code is briefly described in the Files subsection.
 1. daily seasonal trend component
 
 <img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.daily.component.01.png"
-alt="daily seasonal trend component" width="50%" height="50%" align="right"/>
+alt="daily seasonal trend component" width="50%" height="50%" align="left"/>
 
 2. yearly seasonal trend component
 
 <img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.yearly.component.01.png"
-alt="yearly seasonal trend component" width="50%" height="50%" align="right"/>
+alt="yearly seasonal trend component" width="50%" height="50%" align="left"/>
 
 The daily component shows a smooth change throughout the period.
 The less smooth yearly component may indicate more data is required and/or
