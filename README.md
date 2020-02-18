@@ -137,12 +137,12 @@ The two figures below show the daily and yearly components found using the
 code is briefly described in the Files subsection.
 
 1. daily seasonal trend component
-![daily seasonal trend component
-](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.daily.component.01.png "daily seasonal trend component")
+<img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.daily.component.01.png"
+alt="daily seasonal trend component" width="50%" height="50%"/>
 
 2. yearly seasonal trend component
-![yearly seasonal trend component
-](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.yearly.component.01.png "yearly seasonal trend component")
+<img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.yearly.component.01.png"
+alt="yearly seasonal trend component" width="50%" height="50%"/>
 
 The daily component shows a smooth change throughout the period.
 The less smooth yearly component may indicate more data is required and/or
@@ -161,9 +161,9 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * Remove known [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) and other unrealistic measurements
  * I'd usually do some exploratory data analysis but that is more or less covered in a separate repository
    * [Cambridge University Computer Laboratory Weather Station R Shiny Web App](https://github.com/makeyourownmaker/ComLabWeatherShiny)
- * [4.01-baselines.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4-baselines.R)
+ * [4.01-baselines.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.01-baselines.R)
    * Build baseline models and calculate forecast accuracy using [forecast package](https://cran.r-project.org/web/packages/forecast/).
- * [4.02-prophet.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3-prophet.R)
+ * [4.02-prophet.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.02-prophet.R)
    * Build multi-seasonal model using [prophet package](https://cran.r-project.org/web/packages/prophet/).
 
 
