@@ -56,7 +56,7 @@ I have no affiliation with Cambridge University, the Computer Laboratory or the 
 I live close to this weather station.  When I started looking at this data the UK Met Office
 were updating forecasts every 2 hours.  I thought I could produce a more frequent
 [nowcast](https://en.wikipedia.org/wiki/Nowcasting_(meteorology)) using time series or
-machine learning methods.
+statistical learning methods.
 
 
 ### Variables
@@ -118,7 +118,7 @@ documentation refers to it as the naive method.
 4. [Holt](https://otexts.com/fpp2/holt.html) extended simple exponential
 smoothing to include data with a trend.
 
-Holt-Winters exponential smoothing and ARIMA models are not suitable
+Holt-Winters exponential smoothing and vanilla ARIMA models are not suitable
 for this temperature data due to multi-seasonality which is explained
 next.
 
@@ -147,8 +147,9 @@ The daily and yearly components show smooth cyclic change as expected.
 
 The forecast package supports multi-seasonal models using the tbats() function.
 I like the forecast package and recommend it but the prophet package is faster
-with this data set.  I have not explored the simpler mstl() function from the
-forecast package.
+with this data set.  Unfortunately the tbats() function does not support
+including additional regressors.
+I have not explored the simpler mstl() function from the forecast package.
 
 
 ### Files
@@ -161,6 +162,7 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * Remove known [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) and other unrealistic measurements
  * I'd usually do some exploratory data analysis but that is more or less covered in a separate repository
    * [Cambridge University Computer Laboratory Weather Station R Shiny Web App](https://github.com/makeyourownmaker/ComLabWeatherShiny)
+   * Some feature engineering will probably be required later
  * [4.01-baselines.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.01-baselines.R)
    * Build baseline models and calculate nowcast accuracy using the [forecast package](https://cran.r-project.org/web/packages/forecast/).
  * [4.02-prophet.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.02-prophet.R)
@@ -173,7 +175,9 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
   * Benchmark against the baseline models
   * Explore adding additional regressors
 * Add more time series models
-  * [bsts](https://cran.r-project.org/web/packages/bsts/index.html) if it supports multi-seasonality
+  * [TSA](https://cran.r-project.org/web/packages/TSA/index.html) supports multiple seasonalities and
+    exogenous variables with the arimax() function
+  * [bsts](https://cran.r-project.org/web/packages/bsts/index.html) *if* it supports multi-seasonality
     * spike-and-slab priors are quite appealing for adding regressors
 * Add some statistical learning models
   * Support vector machines, modern neural networks etc may have some utility
