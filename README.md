@@ -143,7 +143,7 @@ code is briefly described in the Files subsection.
 
 <img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/prophet.yearly.component.01.png" alt="yearly seasonal trend component" width="50%" height="50%"/>
 
-The daily and yearly components show smooth change throughout.
+The daily and yearly components show smooth cyclic change as expected.
 
 The forecast package supports multi-seasonal models using the tbats() function.
 I like the forecast package and recommend it but the prophet package is faster
