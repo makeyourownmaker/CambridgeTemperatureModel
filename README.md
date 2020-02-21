@@ -183,6 +183,9 @@ The accuracy results for one step ahead forecasts:
 
 Using more changepoints showed little to no improvement.
 
+These results are substantially lower than the one step ahead forecasts.
+The prophet models may perform better for daily and/or weekly forecasts.
+
 
 ### Files
 
@@ -217,6 +220,8 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
   * Support vector regression, modern neural networks etc may have some utility
 * Improve documentation
   * Summarise cross-validation, models etc
+  * Add a simple plot showing temperature over the years
+    * Should help in discussions of stationarity and additive seasonality
 
 
 ## Contributing
