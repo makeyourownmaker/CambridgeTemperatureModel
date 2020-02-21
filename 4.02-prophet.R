@@ -5,24 +5,39 @@ library(data.table)
 library(lubridate)
 library(prophet)
 
-weather.proph <- weather.08.08.01.cc[, .(ds=as.POSIXct(timestamp, tz="GMT"), y=temperature)]
 
-date() # approx 7 mins
-m.proph <- prophet(weather.proph, daily.seasonality=TRUE, weekly.seasonality=FALSE, yearly.seasonality=2)
+################################################################################################################################
+# Build logistic model
+
+weather.proph <- weather.08.08.01.cc[, .(ds=as.POSIXct(timestamp, tz="GMT"), y=temperature)]
+weather.proph$cap <- 400
+weather.proph$floor <- -150
+
+date() # approx 10 mins
+m.proph.log <- prophet(weather.proph,
+                       growth='logistic',
+                       daily.seasonality=TRUE,
+                       weekly.seasonality=FALSE,
+                       yearly.seasonality=2)
 date()
 
-# All of these take approx 15 mins! WTF?
-#future.proph <- make_future_dataframe(m, periods = 365)                   # 1 year
-#future.proph <- make_future_dataframe(m.proph, periods = 1, freq = "day") # 1 day
-future.proph <- make_future_dataframe(m.proph, periods = 1, freq = 3600)   # 1 hour
-#future.proph <- make_future_dataframe(m.proph, periods = 1, freq = 1)     # 1 sec
+
+################################################################################################################################
+# Plot seasonal components of the logistic model
+
+# All of these take approx 15 mins!
+#future.proph.log <- make_future_dataframe(m.proph.log.cp.50, periods = 365)       # 1 year
+#future.proph.log <- make_future_dataframe(m.proph.log, periods = 1, freq = "day") # 1 day
+future.proph.log <- make_future_dataframe(m.proph.log, periods = 1, freq = 3600)   # 1 hour
+#future.proph.log <- make_future_dataframe(m.proph.log, periods = 1, freq = 1)     # 1 sec
+future.proph.log$cap <- 400
+future.proph.log$floor <- -150
 
 date() # approx 15 mins
-forecast.proph <- predict(m.proph, future.proph)
+forecast.proph.log <- predict(m.proph.log, future.proph.log)
 date()
 
-pro.mod.comps <- prophet_plot_components(m.proph, forecast.proph)
-#dev.off()
+pro.mod.comps <- prophet_plot_components(m.proph.log, forecast.proph.log)
 
 
 ifelse(!dir.exists(file.path("figures")), dir.create(file.path("figures")), FALSE)
@@ -34,5 +49,57 @@ dev.off()
 png("figures/prophet.daily.component.01.png", units = "in", width = 6, height = 4, res = 600)
 pro.mod.comps[3]
 dev.off()
+
+
+################################################################################################################################
+# Cross-validate the logistic model
+
+date() # approx 2 hours
+cv.proph.log <- cross_validation(m.proph.log, horizon=1, period=1000, units='hours', initial=90000)
+date()
+cv.proph.log
+performance_metrics(cv.proph.log)
+
+rmse(cv.proph$y, cv.proph$yhat)
+mae(cv.proph$y, cv.proph$yhat)
+mape(cv.proph$y, cv.proph$yhat)
+
+rmse(cv.proph.log$y, cv.proph.log$yhat)
+# [1] 28.82351
+mae(cv.proph.log$y, cv.proph.log$yhat)
+# [1] 25.88272
+mape(cv.proph.log$y, cv.proph.log$yhat)
+# [1] 50.2522
+
+
+################################################################################################################################
+# Build and cross-validate a logistic model with more changepoints
+
+# n.changepoints=50
+# based on recommendation from https://towardsdatascience.com/implementing-facebook-prophet-efficiently-c241305405a3
+date() # approx 50 mins :-(
+m.proph.log.cp.50 <- prophet(weather.proph,
+                             growth='logistic',
+                             n.changepoints=50,
+                             daily.seasonality=TRUE,
+                             weekly.seasonality=FALSE,
+                             yearly.seasonality=2)
+date()
+
+
+date() # approx 10 hours :-(
+cv.proph.log.cp.50 <- cross_validation(m.proph.log.cp.50, horizon=1, period=1000, units='hours', initial=90000)
+date()
+cv.proph.log.cp.50
+performance_metrics(cv.proph.log.cp.50)
+
+rmse(cv.proph.log.cp.50$y, cv.proph.log.cp.50$yhat)
+# [1] 28.65922
+mae(cv.proph.log.cp.50$y, cv.proph.log.cp.50$yhat)
+# [1] 25.80077
+mape(cv.proph.log.cp.50$y, cv.proph.log.cp.50$yhat)
+# [1] 50.13084
+# Marginally better than the logistic model :-(
+# Not worth the extra compute time
 
 
