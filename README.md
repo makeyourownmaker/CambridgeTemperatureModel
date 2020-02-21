@@ -51,12 +51,14 @@ load("data/CambridgeTemperatureModel.RData")
 The [Digital Technology Group](https://www.cl.cam.ac.uk/research/dtg/) in the Cambridge University
 [Computer Laboratory](https://www.cl.cam.ac.uk/) maintain a [weather station](https://www.cl.cam.ac.uk/research/dtg/weather/).
 
-I have no affiliation with Cambridge University, the Computer Laboratory or the Digital Technology Group.
-
 I live close to this weather station.  When I started looking at this data the UK Met Office
 were updating forecasts every 2 hours.  I thought I could produce a more frequent
-[nowcast](https://en.wikipedia.org/wiki/Nowcasting_(meteorology)) using time series or
-statistical learning methods.
+[nowcast](https://en.wikipedia.org/wiki/Nowcasting_(meteorology)) (one step ahead forecast)
+using time series or statistical learning methods.  Day long and week long forecasts
+are of secondary interest.  Temperature and rainfall are the primary variables of
+interest.  Unfortunately, the rain sensor has issues.
+
+I have no affiliation with Cambridge University, the Computer Laboratory or the Digital Technology Group.
 
 
 ### Variables
@@ -78,6 +80,8 @@ water it contains.  Dew point is defined [here](https://www.cl.cam.ac.uk/researc
 and in more detail [here](http://www.faqs.org/faqs/meteorology/temp-dewpoint/).
 
 There are known issues with the sunlight and rain sensors.  These measurements are not included for now.
+
+Measurements are recorded every 30 minutes.
 
 
 ### Cleaning
@@ -115,10 +119,14 @@ nowcast.  The
 documentation refers to it as the naive method.
 3. Simple exponential smoothing uses
 ["weighted averages, where the weights decrease exponentially as observations come from further in the past"](https://otexts.com/fpp2/ses.html).
+Generally speaking, this method is surprisingly accurate given its low computational complexity.
 4. [Holt](https://otexts.com/fpp2/holt.html) extended simple exponential
 smoothing to include data with a trend.
 
-Holt-Winters exponential smoothing and vanilla ARIMA models are not suitable
+Two different Holt-Winters exponential smoothing implementations failed!
+Sadly the double seasonal Holt-Winters exponential smoothing implementation in
+the forecast package is not suitable when data contain zeros or negative numbers.
+Vanilla ARIMA models are not suitable
 for this temperature data due to multi-seasonality which is explained
 next.
 
@@ -149,7 +157,31 @@ The forecast package supports multi-seasonal models using the tbats() function.
 I like the forecast package and recommend it but the prophet package is faster
 with this data set.  Unfortunately the tbats() function does not support
 including additional regressors.
-I have not explored the simpler mstl() function from the forecast package.
+
+
+### Prophet models
+
+Two prophet models were built:
+
+1. logistic growth with daily and annual components with automatic changepoint detection
+2. logistic growth with daily and annual components with 50 changepoints specified
+
+In both cases a floor of -150 and a cap of 400 were used for
+[logistic growth](https://facebook.github.io/prophet/docs/saturating_forecasts.html).
+
+A changepoint is a timepoint where the statistical properties differ before and after
+the timepoint.  The prophet package detects 25 changepoints automatically.
+
+Additive seasonality is assumed for both models.
+
+The accuracy results for one step ahead forecasts:
+
+| Method                                  | RMSE     | MAE      | MAPE     |
+| --------------------------------------- | -------: | -------: | -------: |
+| Logistic growth, automatic changepoints | 28.82    | 25.88    | 50.25    |
+| Logistic growth, 50 changepoints        | 28.66    | 25.80    | 50.13    |
+
+Using more changepoints showed little to no improvement.
 
 
 ### Files
@@ -167,12 +199,14 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * Build baseline models and calculate nowcast accuracy using the [forecast package](https://cran.r-project.org/web/packages/forecast/).
  * [4.02-prophet.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.02-prophet.R)
    * Build multi-seasonal model using the [prophet package](https://cran.r-project.org/web/packages/prophet/).
+     * Will create a directory called figures if it doesn't already exist
 
 
 ## Roadmap
 
+* Expand cross-validation
+  * Include daily and weekly forecasts
 * Enhance prophet model
-  * Benchmark against the baseline models
   * Explore adding additional regressors
 * Add more time series models
   * [TSA](https://cran.r-project.org/web/packages/TSA/index.html) supports multiple seasonalities and
@@ -180,11 +214,9 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
   * [bsts](https://cran.r-project.org/web/packages/bsts/index.html) *if* it supports multi-seasonality
     * spike-and-slab priors are quite appealing for adding regressors
 * Add some statistical learning models
-  * Support vector machines, modern neural networks etc may have some utility
-  * GAMs and Gaussian processes may also prove worthwhile
+  * Support vector regression, modern neural networks etc may have some utility
 * Improve documentation
   * Summarise cross-validation, models etc
-* Lint scripts with [goodpractice](https://cran.r-project.org/web/packages/goodpractice/index.html)
 
 
 ## Contributing
