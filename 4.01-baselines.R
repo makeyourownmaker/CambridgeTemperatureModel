@@ -30,9 +30,8 @@ mape(weather.proph$y, weather.proph$yshift)
 # Bit more than 1st year of data
 weather.proph.small <- head(weather.proph$y, 20000)
 
-date() # approx 15 mins :-(
-e.ses <- tsCV(weather.proph.small, ses, h=1)
-date()
+# approx 15 mins :-(
+system.time( e.ses <- tsCV(weather.proph.small, ses, h=1) )
 sqrt(mean(e.ses^2, na.rm=TRUE))
 # [1] 6.052966
 mean(abs(e.ses), na.rm=TRUE)
@@ -41,9 +40,8 @@ mape(weather.proph.small, weather.proph.small + e.ses)
 # [1] 9.811932
 
 
-date() # approx 1 hour 2 mins :-(
-e.holt <- tsCV(weather.proph.small, holt, h=1)
-date()
+# approx 1 hour 2 mins :-(
+system.time( e.holt <- tsCV(weather.proph.small, holt, h=1) )
 sqrt(mean(e.holt^2, na.rm=TRUE))
 # [1] 5.617949
 mean(abs(e.holt), na.rm=TRUE)

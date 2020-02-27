@@ -13,13 +13,12 @@ weather.proph <- weather.08.08.01.cc[, .(ds=as.POSIXct(timestamp, tz="GMT"), y=t
 weather.proph$cap <- 400
 weather.proph$floor <- -150
 
-date() # approx 10 mins
-m.proph.log <- prophet(weather.proph,
-                       growth='logistic',
-                       daily.seasonality=TRUE,
-                       weekly.seasonality=FALSE,
-                       yearly.seasonality=2)
-date()
+# approx 10 mins
+system.time( m.proph.log <- prophet(weather.proph,
+                                    growth='logistic',
+                                    daily.seasonality=TRUE,
+                                    weekly.seasonality=FALSE,
+                                    yearly.seasonality=2))
 
 
 ################################################################################################################################
@@ -33,9 +32,8 @@ future.proph.log <- make_future_dataframe(m.proph.log, periods = 1, freq = 3600)
 future.proph.log$cap <- 400
 future.proph.log$floor <- -150
 
-date() # approx 15 mins
-forecast.proph.log <- predict(m.proph.log, future.proph.log)
-date()
+# approx 15 mins
+system.time( forecast.proph.log <- predict(m.proph.log, future.proph.log) )
 
 pro.mod.comps <- prophet_plot_components(m.proph.log, forecast.proph.log)
 
@@ -54,9 +52,12 @@ dev.off()
 ################################################################################################################################
 # Cross-validate the logistic model
 
-date() # approx 2 hours
-cv.proph.log <- cross_validation(m.proph.log, horizon=1, period=1000, units='hours', initial=90000)
-date()
+# approx 2 hours
+system.time( cv.proph.log <- cross_validation(m.proph.log,
+                                              horizon=1,
+                                              period=1000,
+                                              units='hours',
+                                              initial=90000) )
 cv.proph.log
 performance_metrics(cv.proph.log)
 
@@ -77,19 +78,21 @@ mape(cv.proph.log$y, cv.proph.log$yhat)
 
 # n.changepoints=50
 # based on recommendation from https://towardsdatascience.com/implementing-facebook-prophet-efficiently-c241305405a3
-date() # approx 50 mins :-(
-m.proph.log.cp.50 <- prophet(weather.proph,
-                             growth='logistic',
-                             n.changepoints=50,
-                             daily.seasonality=TRUE,
-                             weekly.seasonality=FALSE,
-                             yearly.seasonality=2)
-date()
+# approx 50 mins :-(
+system.time( m.proph.log.cp.50 <- prophet(weather.proph,
+                                          growth='logistic',
+                                          n.changepoints=50,
+                                          daily.seasonality=TRUE,
+                                          weekly.seasonality=FALSE,
+                                          yearly.seasonality=2))
 
 
-date() # approx 10 hours :-(
-cv.proph.log.cp.50 <- cross_validation(m.proph.log.cp.50, horizon=1, period=1000, units='hours', initial=90000)
-date()
+# approx 10 hours :-(
+system.time( cv.proph.log.cp.50 <- cross_validation(m.proph.log.cp.50,
+                                                    horizon=1,
+                                                    period=1000,
+                                                    units='hours',
+                                                    initial=90000))
 cv.proph.log.cp.50
 performance_metrics(cv.proph.log.cp.50)
 
