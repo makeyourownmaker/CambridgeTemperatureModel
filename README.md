@@ -176,14 +176,15 @@ vertical axis shows percent change in temperature.
 
 [Prophet](https://facebook.github.io/prophet/) models are robust to missing data,
 shifts in the trend and typically handle outliers well.  Yearly, weekly,
-and daily seasonality, plus holiday effects can be accomodated.  It works
+and daily seasonality, plus holiday effects can be accomodated.  Seasonal
+components are represented using Fourier terms.  Prophet models work
 best with time series that have strong seasonal effects and several seasons
 of historical data.  [Stan](http://mc-stan.org/) is used for fitting models.
 
 Two prophet models were built:
 
-1. logistic growth with daily and annual components with automatic changepoint detection
-2. logistic growth with daily and annual components with 50 changepoints specified
+1. Logistic growth with daily and annual components with automatic changepoint detection
+2. Logistic growth with daily and annual components with 50 changepoints specified
 
 In both cases a floor of -150 and a cap of 400 were used for
 [logistic growth](https://facebook.github.io/prophet/docs/saturating_forecasts.html).
@@ -203,7 +204,8 @@ The accuracy results for one step ahead forecasts:
 Using more changepoints showed little to no improvement.
 
 These results are substantially higher than most of the baseline one step
-ahead forecasts.
+ahead forecasts.  It's possible that using more data would improve the yearly
+seasonal component and in turn improve the nowcasts.
 The prophet models may perform better for daily forecasts.  Unfortunately,
 daily forecast cross-validation will be quite time-consuming to run.
 
@@ -267,8 +269,9 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 * Enhance prophet model
   * Calculate daily accuracy for prophet models
   * Explore adding additional regressors
-  * Re-evaluate the additive seasonality assumption
 * Add more time series models
+  * I have some [GAM](https://en.wikipedia.org/wiki/Generalized_additive_model)
+    forecasts which are nearing completion
   * [TSA](https://cran.r-project.org/web/packages/TSA/index.html) supports multiple seasonalities and
     exogenous variables with the arimax() function
   * [bsts](https://cran.r-project.org/web/packages/bsts/index.html) *if* it supports multi-seasonality
