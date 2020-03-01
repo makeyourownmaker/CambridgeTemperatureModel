@@ -1,10 +1,14 @@
 
 
-load("data/CambridgeTemperatureModel.RData")
 library(data.table)
 library(lubridate)
 library(prophet)
 
+load("data/CambridgeTemperatureModel.RData")
+
+mae  <- function(obs, pred) mean(abs(obs - pred), na.rm=TRUE)
+rmse <- function(obs, pred) sqrt(mean((obs - pred)^2, na.rm=TRUE))
+mape <- function(obs, pred) mean(abs((obs - pred) / (obs + 1)) * 100, na.rm=TRUE)
 
 ################################################################################################################################
 # Build logistic model
@@ -14,6 +18,8 @@ weather.proph$cap <- 400
 weather.proph$floor <- -150
 
 # approx 10 mins
+# The yearly.seasonality=2 is deliberate
+# It specifies the number of Fourier terms to use
 system.time( m.proph.log <- prophet(weather.proph,
                                     growth='logistic',
                                     daily.seasonality=TRUE,
@@ -105,4 +111,32 @@ mape(cv.proph.log.cp.50$y, cv.proph.log.cp.50$yhat)
 # Marginally better than the logistic model :-(
 # Not worth the extra compute time
 
+
+################################################################################################################################
+# Build logistic growth and multiplicative seasonality model and cross-validate it
+
+# approx 7 mins
+system.time( m.proph.log.mult <- prophet(weather.proph,
+                                         growth='logistic',
+                                         seasonality.mode='multiplicative',
+                                         daily.seasonality=TRUE,
+                                         weekly.seasonality=FALSE,
+                                         yearly.seasonality=2))
+
+# approx 1 hour 42 mins :-(
+system.time( cv.proph.log.mult <- cross_validation(m.proph.log.mult,
+                                                   horizon=1,
+                                                   period=1000,
+                                                   units='hours',
+                                                   initial=90000) )
+cv.proph.log.mult
+performance_metrics(cv.proph.log.mult)
+
+rmse(cv.proph.log.mult$y, cv.proph.log.mult$yhat)
+# [1] 41.55893
+mae(cv.proph.log.mult$y, cv.proph.log.mult$yhat)
+# [1] 38.37446
+mape(cv.proph.log.mult$y, cv.proph.log.mult$yhat)
+# [1] 81.1511
+# Worse than additive seasonality model
 
