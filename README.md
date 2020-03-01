@@ -171,13 +171,14 @@ code is briefly described in the Files subsection.
 The daily and yearly components show smooth cyclic change as expected.  The
 vertical axis shows percent change in temperature.
 
-The forecast package supports multi-seasonal models using the tbats() function.
-I like the forecast package and recommend it but the prophet package is faster
-with this data set.  Unfortunately the tbats() function does not support
-including additional regressors.
 
+### Prophet package models
 
-### Prophet models
+[Prophet](https://facebook.github.io/prophet/) models are robust to missing data,
+shifts in the trend and typically handle outliers well.  Yearly, weekly,
+and daily seasonality, plus holiday effects can be accomodated.  It works
+best with time series that have strong seasonal effects and several seasons
+of historical data.  [Stan](http://mc-stan.org/) is used for fitting models.
 
 Two prophet models were built:
 
@@ -203,7 +204,36 @@ Using more changepoints showed little to no improvement.
 
 These results are substantially higher than most of the baseline one step
 ahead forecasts.
-The prophet models may perform better for daily forecasts.
+The prophet models may perform better for daily forecasts.  Unfortunately,
+daily forecast cross-validation will be quite time-consuming to run.
+
+
+### Forecast package model
+
+The forecast package supports multi-seasonal models using the tbats() function.
+
+This function uses a trigonometric representation of seasonality, instead of conventional
+seasonal indices.  It also automatically performs Box-Cox transformation
+of the time series, as required.  It can be very slow to estimate, especially with
+multiple seasonal time series.  The tbats() function does not support including additional
+regressors.
+
+Unfortunately, cross-validation fails.  See the source code described in the Files
+subsection for details and
+[this unanswered stackoverflow question](https://stackoverflow.com/questions/45999524/for-loop-using-tscv-error-in-nextmethod-replacement-has-length-zero).
+
+FWIW here are the training set accuracy metrics for one step ahead forecasts:
+
+| Method                         | RMSE     | MAE      | MAPE     |
+| ------------------------------ | -------: | -------: | -------: |
+| TBATS                          | 5.4      | 3.7      | Inf      |
+
+These results are **not** comparable with the baseline methods which are
+calculated on a separate test data set.
+
+The infinite MAPE value comes from the forecast package mape() function
+implementation which permits division by zero.  Other implementations add
+one to the denominator to avoid this behavior.
 
 
 ### Files
@@ -227,11 +257,15 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
  * [4.02-prophet.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.02-prophet.R)
    * Build multi-seasonal model using the [prophet package](https://cran.r-project.org/web/packages/prophet/).
      * This script will create a directory called figures if it doesn't already exist
+ * [4.03-forecast.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.03-forecast.R)
+   * Build multi-seasonal TBATS model using the [forecast package](https://cran.r-project.org/web/packages/forecast/).
+     * Cross-validation fails - see source code for details
 
 
 ## Roadmap
 
 * Enhance prophet model
+  * Calculate daily accuracy for prophet models
   * Explore adding additional regressors
   * Re-evaluate the additive seasonality assumption
 * Add more time series models
