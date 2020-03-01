@@ -212,7 +212,8 @@ daily forecast cross-validation will be quite time-consuming to run.
 
 ### Forecast package model
 
-The forecast package supports multi-seasonal models using the tbats() function.
+The forecast package supports multi-seasonal models using the 
+TBATS (Trigonometric Exponential Smoothing) method.
 
 This function uses a trigonometric representation of seasonality, instead of conventional
 seasonal indices.  It also automatically performs Box-Cox transformation
