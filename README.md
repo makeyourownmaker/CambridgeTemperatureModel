@@ -97,7 +97,7 @@ was used to remove the remaining influential observations but some problems may 
 long series of repeated values.  The remaining measurements have no missing values.
 
 
-### Baselines
+### One step ahead baselines
 
 The following table shows accuracy metrics for baseline nowcast methods:
 
@@ -112,10 +112,12 @@ These metrics are calculated in the baselines file briefly
 described in the Files subsection.  Numbers in **bold** indicate
 the lowest value for each metric.
 
-RMSE - Root Mean Squared Error
-MAE - Mean Absolute Error
-MAPE - Mean Absolute Percent Error
+The three accuracy metrics:
+ * RMSE - Root Mean Squared Error
+ * MAE - Mean Absolute Error
+ * MAPE - Mean Absolute Percent Error
 
+The four baseline methods:
 1. The mean temperature method simply uses the mean temperature across
 the entire data set as the nowcast.
 2. The persistent temperature method is a popular benchmark in the
@@ -129,6 +131,8 @@ Generally speaking, this method is surprisingly accurate given its low computati
 4. [Holt](https://otexts.com/fpp2/holt.html) extended simple exponential
 smoothing to include data with a trend.
 
+
+### Daily forecast baselines
 
 The following graph shows RMSE values for baseline daily forecast methods:
 
