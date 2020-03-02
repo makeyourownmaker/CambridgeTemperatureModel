@@ -23,6 +23,7 @@ install.packages("forecast")
 install.packages("prophet")
 install.packages("suncalc")
 install.packages("ggplot2")
+install.packages("tseries")
 ```
 
 Clone repository:
@@ -99,6 +100,15 @@ long series of repeated values.  The remaining measurements have no missing valu
 The following figure shows the cleaned temperature time series.
 
 <img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/temperature.time.series.01.png" alt="Temperature time series" width="50%" height="50%"/>
+
+A visual inspection indicates a lack of trend.
+
+The [ADF](https://en.wikipedia.org/wiki/Augmented_Dickey%E2%80%93Fuller_test) and
+[KPSS](https://en.wikipedia.org/wiki/KPSS_test) tests in the exloratory data analysis
+file (described in the Files subsection below) implies the stationarity of this time
+series.
+
+
 
 ### One step ahead baselines
 
@@ -251,7 +261,7 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
  * [2-clean.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/2-clean.R)
    * Remove known [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) and other unrealistic measurements
  * [3.01-eda.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3.01-eda.R)
-     * Complete temperature time series plot
+     * Temperature time series plot and stationarity tests
      * This script will create a directory called figures if it doesn't already exist
      * Exploratory data analysis is also covered in my
      [Cambridge University Computer Laboratory Weather Station R Shiny Web App](https://github.com/makeyourownmaker/ComLabWeatherShiny)
@@ -287,7 +297,6 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 * Add some statistical learning models
   * Support vector regression, modern neural networks etc may have some utility
 * Improve documentation
-  * Describe stationarity and trend
   * Describe cross-validation
 
 
