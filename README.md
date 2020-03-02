@@ -250,16 +250,16 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * Download data, set variable types and adds some date and time related fields
  * [2-clean.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/2-clean.R)
    * Remove known [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) and other unrealistic measurements
- * Exploratory data analysis is more or less covered in my
-   [Cambridge University Computer Laboratory Weather Station R Shiny Web App](https://github.com/makeyourownmaker/ComLabWeatherShiny)
-   repository
-   * [3.01-eda.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3.01-eda.R)
-     * Single time series plot
+ * [3.01-eda.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3.01-eda.R)
+     * Complete temperature time series plot
      * This script will create a directory called figures if it doesn't already exist
-   * Some feature engineering will be required
-     * transformations like the Box-Cox
-     * dummy seasonal variables for certain models
-     * possibly deseasonalisation
+     * Exploratory data analysis is also covered in my
+     [Cambridge University Computer Laboratory Weather Station R Shiny Web App](https://github.com/makeyourownmaker/ComLabWeatherShiny)
+     repository
+ * Some feature engineering will be required
+   * Transformations like the Box-Cox
+   * Dummy seasonal variables for certain models
+   * Possibly deseasonalisation
  * [4.01-baselines.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.01-baselines.R)
    * Build baseline models and calculate nowcast and daily accuracy using the [forecast package](https://cran.r-project.org/web/packages/forecast/).
      * This script will create a directory called figures if it doesn't already exist
