@@ -242,7 +242,7 @@ FWIW here are the training set accuracy metrics for one step ahead forecasts:
 
 | Method                         | RMSE     | MAE      | MAPE     |
 | ------------------------------ | -------: | -------: | -------: |
-| TBATS                          | 5.4      | 3.7      | Inf      |
+| TBATS                          | 5.7      | 3.8      | Inf      |
 
 These results are **not** comparable with the baseline methods which are
 calculated on a separate test data set.
