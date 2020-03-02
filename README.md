@@ -96,6 +96,9 @@ data.  All measurements for the entire day or days was removed for each of the l
 was used to remove the remaining influential observations but some problems may remain in the data, such as
 long series of repeated values.  The remaining measurements have no missing values.
 
+The following figure shows the cleaned temperature time series.
+
+<img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/temperature.time.series.01.png" alt="Temperature time series" width="50%" height="50%"/>
 
 ### One step ahead baselines
 
@@ -247,13 +250,16 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * Download data, set variable types and adds some date and time related fields
  * [2-clean.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/2-clean.R)
    * Remove known [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) and other unrealistic measurements
- * I'd usually do some exploratory data analysis but that is more or less covered in my
+ * Exploratory data analysis is more or less covered in my
    [Cambridge University Computer Laboratory Weather Station R Shiny Web App](https://github.com/makeyourownmaker/ComLabWeatherShiny)
    repository
- * Some feature engineering will be required
-   * transformations like the Box-Cox
-   * dummy seasonal variables for certain models
-   * possibly deseasonalisation
+   * [3.01-eda.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3.01-eda.R)
+     * Single time series plot
+     * This script will create a directory called figures if it doesn't already exist
+   * Some feature engineering will be required
+     * transformations like the Box-Cox
+     * dummy seasonal variables for certain models
+     * possibly deseasonalisation
  * [4.01-baselines.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/4.01-baselines.R)
    * Build baseline models and calculate nowcast and daily accuracy using the [forecast package](https://cran.r-project.org/web/packages/forecast/).
      * This script will create a directory called figures if it doesn't already exist
@@ -269,6 +275,7 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 
 * Enhance prophet model
   * Calculate daily accuracy for prophet models
+  * Build prophet model on full data set
   * Explore adding additional regressors
 * Add more time series models
   * I have some [GAM](https://en.wikipedia.org/wiki/Generalized_additive_model)
@@ -280,9 +287,8 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 * Add some statistical learning models
   * Support vector regression, modern neural networks etc may have some utility
 * Improve documentation
-  * Summarise cross-validation, models etc
-  * Add a simple plot showing temperature over the years
-    * Describe stationarity and trend
+  * Describe stationarity and trend
+  * Describe cross-validation
 
 
 ## Contributing
