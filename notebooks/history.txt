@@ -1,0 +1,430 @@
+%matplotlib inline
+
+import datetime
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import tensorflow as tf
+from keras.models import Sequential
+from keras.layers import Input, Dense, Dropout, Activation, Conv1D, BatchNormalization, GlobalAveragePooling1D
+
+# from fbprophet import Prophet
+# from fbprophet.diagnostics import cross_validation, performance_metrics
+# silence prophet INFO messages
+# import logging
+# logging.getLogger('fbprophet').setLevel(logging.WARNING)
+
+# Reduces variance in results but won't eliminate it :-(
+%env PYTHONHASHSEED=0
+import random
+random.seed(42)
+np.random.seed(42)
+tf.random.set_seed(42)
+df = pd.read_csv("../data/CamUKWeather.csv", parse_dates = True)
+print("Shape:")
+print(df.shape)
+print("\nInfo:")
+print(df.info())
+print("\nSummary stats:")
+display(df.describe())
+print("\nRaw data:")
+df
+plt.hist2d(df['wind.bearing.mean'], df['wind.speed.mean'], bins = (50, 50), vmax = 400)
+plt.colorbar()
+plt.xlabel('Wind Direction (deg)')
+plt.ylabel('Wind Velocity (Knots * 10)');
+wv = df['wind.speed.mean']
+max_wv = df['wind.speed.max']
+
+# Convert to radians.
+wd_rad = df['wind.bearing.mean'] * np.pi / 180
+
+# Calculate the wind x and y components.
+df['wind.x'] = wv * np.cos(wd_rad)
+df['wind.y'] = wv * np.sin(wd_rad)
+
+# Calculate the max wind x and y components.
+df['max.wind.x'] = max_wv * np.cos(wd_rad)
+df['max.wind.y'] = max_wv * np.sin(wd_rad)
+
+plt.hist2d(df['wind.x'], df['wind.y'], bins = (50, 50), vmax = 400)
+plt.colorbar()
+plt.xlabel('Wind X (Knots * 10)')
+plt.ylabel('Wind Y (Knots * 10)');
+# convert to secs
+date_time   = pd.to_datetime(df['ds'], format = '%Y.%m.%d %H:%M:%S')
+timestamp_s = date_time.map(datetime.datetime.timestamp)
+
+day  = 24 * 60 * 60
+year = (365.2425) * day
+
+df['day.sin']  = np.sin(timestamp_s * (2 * np.pi / day))
+df['day.cos']  = np.cos(timestamp_s * (2 * np.pi / day))
+df['year.sin'] = np.sin(timestamp_s * (2 * np.pi / year))
+df['year.cos'] = np.cos(timestamp_s * (2 * np.pi / year))
+
+plt.plot(np.array(df['day.sin'])[:49])
+plt.plot(np.array(df['day.cos'])[:49])
+plt.xlabel('Time')
+plt.title('Time of day signal');
+
+# plt.plot(np.array(df['year.sin'])[:17532])
+# plt.plot(np.array(df['year.cos'])[:17532])
+# plt.xlabel('Time')
+# plt.title('Time of year signal');
+keep_cols = ['y', 'humidity', 'dew.point', 'pressure',
+             'wind.x', 'wind.y', 'max.wind.x', 'max.wind.y', 
+             'day.sin', 'day.cos', 'year.sin', 'year.cos']
+del_cols = ['ds', 'year', 'doy', 'time', 
+            'wind.bearing.mean', 'wind.speed.mean', 'wind.speed.max']
+df_orig  = df
+df.drop(del_cols, axis = 1, inplace = True)
+
+n = len(df)
+train_df = df[0:int(n * 0.7)]
+valid_df = df[int(n * 0.7):int(n * 0.9)]
+test_df  = df[int(n * 0.9):]
+
+print("train shape: ", train_df.shape)
+print("valid shape: ", valid_df.shape)
+print("test shape:  ",  test_df.shape)
+train_mean = train_df.mean()
+train_std  = train_df.std()
+
+train_df = (train_df - train_mean) / train_std
+valid_df = (valid_df - train_mean) / train_std
+test_df  = (test_df  - train_mean) / train_std
+
+df_std = (df - train_mean) / train_std
+df_std = df_std.melt(var_name = 'Column', value_name = 'Normalized')
+
+plt.figure(figsize=(12, 6))
+ax = sns.violinplot(x = 'Column', y = 'Normalized', data = df_std)
+ax.set_xticklabels(df.keys(), rotation = 90)
+ax.set_title('All data');
+def make_dataset(data, y_cols, lags = 1, steps_ahead = 1, stride = 1, bs = 32, shuffle = False):    
+    assert stride >= steps_ahead
+
+    total_window_size = lags + stride
+    
+    data_np = np.array(data, dtype = np.float32)    
+    ds = tf.keras.preprocessing.timeseries_dataset_from_array(
+           data    = data_np,
+           targets = None,
+           sequence_length = total_window_size,
+           sequence_stride = 1,
+           shuffle    = shuffle,
+           batch_size = bs)
+            
+    col_indices = {name: i for i, name in enumerate(data.columns)}    
+    X_slice = slice(0, lags)
+    y_start = total_window_size - steps_ahead
+    y_slice = slice(y_start, None)
+
+    
+    def split_window(features):   
+        X = features[:, X_slice, :]
+        y = features[:, y_slice, :]
+        X = tf.stack(
+            [X[:, :, col_indices[name]] for name in data.columns if name not in y_cols],
+            axis = -1)    
+        y = tf.stack(
+            [y[:, :, col_indices[name]] for name in y_cols],
+            axis = -1)
+
+        # Slicing doesn't preserve static shape information, so set the shapes
+        # manually.  This way the `tf.data.Datasets` are easier to inspect.
+        X.set_shape([None, lags,        None])
+        y.set_shape([None, steps_ahead, None])
+
+        return X, y
+
+    
+    ds = ds.map(split_window)
+        
+    return ds
+
+
+def make_datasets(train, valid, test, 
+                  y_cols = 'y', lags = 1, steps_ahead = 1, 
+                  stride = 1, bs = 32, shuffle = False):
+    ds_train = make_dataset(train, y_cols, 
+                             lags = lags, steps_ahead = steps_ahead, stride = stride, shuffle = shuffle)
+    ds_valid = make_dataset(valid, y_cols, 
+                             lags = lags, steps_ahead = steps_ahead, stride = stride, shuffle = shuffle)
+    ds_test  = make_dataset(test,  y_cols, 
+                             lags = lags, steps_ahead = steps_ahead, stride = stride, shuffle = shuffle)
+    
+    return ds_train, ds_valid, ds_test
+
+
+def dataset_sanity_checks(data, name):
+    
+    print(name, "batches: ", data.cardinality().numpy())
+    for batch in data.take(1):
+        print("\tX (batch_size, time, features): ", batch[0].shape)
+        print("\ty (batch_size, time, features): ", batch[1].shape)
+        print("\tX[0][0]: ", batch[0][0])
+        print("\ty[0][0]: ", batch[1][0]) 
+    
+    return 1
+
+
+# Single step-ahead
+lags = 4
+ds_train_4l_1s, ds_valid_4l_1s, ds_test_4l_1s = make_datasets(train_df, valid_df, test_df, 
+                                                              lags = lags)
+dataset_sanity_checks(ds_train_4l_1s, '1s train');
+
+# 4 steps-ahead
+steps = stride = 4
+ds_train_4l_4s, ds_valid_4l_4s, ds_test_4l_4s = make_datasets(train_df, valid_df, test_df, 
+                                                              lags = lags, steps_ahead = steps, stride = stride)
+display(train_df.head(lags + steps))
+dataset_sanity_checks(ds_train_4l_4s, '4s train');
+def compile_fit_validate(model, train, valid, epochs = 5, verbose = 1):
+    # Reduces variance in results but won't eliminate it :-(
+    random.seed(42)
+    np.random.seed(42)
+    tf.random.set_seed(42)
+
+    model.compile(optimizer = 'adam', loss = 'mse', metrics = ['mae', 'mape'])    
+    h = model.fit(train, validation_data = valid,
+                  epochs = epochs, verbose = verbose)
+    
+    return h
+
+    
+def plot_history(h, name):
+    plt.plot(h.history['loss'])
+    plt.plot(h.history['val_loss'])
+    plt.title(name + ' loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc = 'upper left')
+    plt.show()
+
+    plt.plot(h.history['mape'])
+    plt.plot(h.history['val_mape'])
+    plt.title(name + ' mape')
+    plt.ylabel('mape')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc = 'upper left')
+    plt.show();
+
+    
+def print_min_loss(h, name):
+    argmin_loss     = np.argmin(np.array(h.history['loss']))
+    argmin_val_loss = np.argmin(np.array(h.history['val_loss']))
+    min_loss        = h.history['loss'][argmin_loss]
+    min_val_loss    = h.history['val_loss'][argmin_val_loss]
+    mape            = h.history['mape'][argmin_loss]
+    val_mape        = h.history['val_mape'][argmin_val_loss]
+    mae             = h.history['mae'][argmin_loss]
+    val_mae         = h.history['val_mae'][argmin_val_loss]
+    txt = "{0:s} {1:s} min loss: {2:f}\tmae: {3:f}\tmape: {4:f}\tepoch: {5:d}"
+    print(txt.format(name, "train", min_loss,     mae,     mape,     argmin_loss + 1))
+    print(txt.format(name, "valid", min_val_loss, val_mae, val_mape, argmin_val_loss + 1))
+    print()
+
+
+def get_io_shapes(data):
+    for batch in data.take(1):
+        in_shape  = batch[0][0].shape
+        out_shape = batch[1][0].shape
+        
+    return in_shape, out_shape
+
+
+# For testing compile_fit_validate, plot_progress etc
+def build_small_model(name, data):
+    in_shape, _ = get_io_shapes(data)
+    
+    small = Sequential(name = name)
+    
+    small.add(Input(shape = in_shape))
+    
+    small.add(Dense(64, activation = 'relu'))
+    small.add(Dense(64, activation = 'relu'))
+    
+    small.add(Dense(1))
+    
+    return small
+
+
+def build_mlp_model(name, data):
+    in_shape, _ = get_io_shapes(data)
+    
+    mlp = Sequential(name = name)
+    
+    mlp.add(Input(shape = in_shape))
+    mlp.add(Dropout(0.1))
+    
+    mlp.add(Dense(500, activation = 'relu'))
+    mlp.add(Dropout(0.2))
+    
+    mlp.add(Dense(500, activation = 'relu'))
+    mlp.add(Dropout(0.2))
+    
+    mlp.add(Dense(500, activation = 'relu'))
+    mlp.add(Dropout(0.3))
+    
+    mlp.add(Dense(1))
+    
+    return mlp
+
+
+def run_model(model, train, valid, epochs):
+    in_shape, out_shape = get_io_shapes(train)
+    model_id = model.name + ' model - ' + str(in_shape[0]) + \
+               ' lags ' + str(out_shape[0]) + ' steps-ahead -'
+    
+    model.summary()
+    h = compile_fit_validate(model, train, valid, epochs)
+    plot_history(h, model_id)
+    print_min_loss(h, model_id)
+    
+    return h
+    
+
+# For testing purposes
+# name = 'small'
+# small_4l_1s = build_small_model(name, ds_train_4l_1s)
+# run_model(small_4l_1s, ds_train_4l_1s, ds_valid_4l_1s, epochs = 2)
+# small_4l_4s = build_small_model(name, ds_train_4l_4s)
+# run_model(small_4l_4s, ds_train_4l_4s, ds_valid_4l_4s, epochs = 2)
+
+
+name = 'MLP'
+mlp_4l_1s   = build_mlp_model(name, ds_train_4l_1s)
+h_mlp_4l_1s = run_model(mlp_4l_1s, ds_train_4l_1s, ds_valid_4l_1s, epochs = 2)
+mlp_4l_4s   = build_mlp_model(name, ds_train_4l_4s)
+h_mlp_4l_4s = run_model(mlp_4l_1s, ds_train_4l_4s, ds_valid_4l_4s, epochs = 2)
+def build_fcn_model(name, data):
+    in_shape, _ = get_io_shapes(data)
+    
+    fcn = Sequential(name = name)
+    fcn.add(Input(shape = in_shape))
+    
+    fcn.add(Conv1D(filters = 128, kernel_size = 8, padding = 'same'))
+    fcn.add(BatchNormalization())
+    fcn.add(Activation(activation = 'relu'))
+
+    fcn.add(Conv1D(filters = 256, kernel_size = 5, padding = 'same'))
+    fcn.add(BatchNormalization())
+    fcn.add(Activation(activation = 'relu'))
+
+    fcn.add(Conv1D(filters = 128, kernel_size = 3, padding = 'same'))
+    fcn.add(BatchNormalization())
+    fcn.add(Activation(activation = 'relu'))
+
+    fcn.add(GlobalAveragePooling1D())
+    fcn.add(Dense(1))
+
+    return fcn
+
+
+name = 'FCN'
+fcn_4l_1s   = build_fcn_model(name, ds_train_4l_1s)
+h_fcn_4l_1s = run_model(fcn_4l_1s, ds_train_4l_1s, ds_valid_4l_1s, epochs = 2)
+fcn_4l_4s   = build_fcn_model(name, ds_train_4l_4s)
+h_fcn_4l_4s = run_model(fcn_4l_4s, ds_train_4l_4s, ds_valid_4l_4s, epochs = 2)
+from time import sleep
+
+notebook = "keras_mlp.ipynb"
+# !jupyter nbconvert --to script {notebook}
+# !jupyter nbconvert --execute --to html {notebook}
+# !jupyter nbconvert --execute --to pdf {notebook}
+# !jupyter nbconvert --to pdf {notebook}
+
+%rm history.txt
+%history -f history.txt
+
+!jupyter nbconvert --to python {notebook}
+sleep(5)
+!jupyter nbconvert --to markdown {notebook}
+sleep(5)
+!jupyter nbconvert --to html {notebook}
+import sys
+import IPython
+
+print("Python version:")
+print(sys.executable)
+print(sys.version)
+print("\nIPython version:")
+print(IPython.__version__)
+import pkg_resources
+import types
+
+def get_imports():
+    for name, val in globals().items():
+        if isinstance(val, types.ModuleType):
+            # Split ensures you get root package, 
+            # not just imported function
+            name = val.__name__.split(".")[0]
+
+        elif isinstance(val, type):
+            name = val.__module__.split(".")[0]
+
+        # Some packages are weird and have different
+        # imported names vs. system/pip names.  Unfortunately,
+        # there is no systematic way to get pip names from
+        # a package's imported name.  You'll have to add
+        # exceptions to this list manually!
+        poorly_named_packages = {
+            "PIL":       "Pillow",
+            "sklearn":   "scikit-learn",
+        }
+        if name in poorly_named_packages.keys():
+            name = poorly_named_packages[name]
+
+        yield name
+
+imports = list(set(get_imports()))
+
+# The only way I found to get the version of the root package
+# from only the name of the package is to cross-check the names 
+# of installed packages vs. imported packages
+requirements = []
+for m in pkg_resources.working_set:
+    if m.project_name in imports and m.project_name != "pip":
+        requirements.append((m.project_name, m.version))
+
+reqs = pd.DataFrame(requirements, columns = ['name', 'version'])
+print("Imported modules:")
+reqs.style.hide_index()
+!date
+from time import sleep
+
+notebook = "keras_mlp.ipynb"
+# !jupyter nbconvert --to script {notebook}
+# !jupyter nbconvert --execute --to html {notebook}
+# !jupyter nbconvert --execute --to pdf {notebook}
+# !jupyter nbconvert --to pdf {notebook}
+
+%rm history.txt
+%history -f history.txt
+
+!jupyter nbconvert --to python {notebook}
+sleep(5)
+!jupyter nbconvert --to markdown {notebook}
+sleep(5)
+!jupyter nbconvert --to html {notebook}
+from time import sleep
+
+notebook = "keras_mlp.ipynb"
+# !jupyter nbconvert --to script {notebook}
+# !jupyter nbconvert --execute --to html {notebook}
+# !jupyter nbconvert --execute --to pdf {notebook}
+# !jupyter nbconvert --to pdf {notebook}
+
+%rm history.txt
+%history -f history.txt
+
+!jupyter nbconvert --to python {notebook}
+sleep(5)
+!jupyter nbconvert --to markdown {notebook}
+sleep(5)
+!jupyter nbconvert --to html {notebook}
