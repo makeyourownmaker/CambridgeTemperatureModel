@@ -310,6 +310,7 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 * [UK Met Office](https://metoffice.gov.uk/)
 * [Cambridge University Computer Laboratory Weather Station R Shiny Web App](https://github.com/makeyourownmaker/ComLabWeatherShiny)
 * [Forecasting surface temperature based on latitude, longitude, day of year and hour of day](https://github.com/makeyourownmaker/ParametricWeatherModel)
+* [Time series and other models for Cambridge UK temperature forecasts in python](https://github.com/makeyourownmaker/CambridgeTemperatureNotebooks)
 
 
 ## License
