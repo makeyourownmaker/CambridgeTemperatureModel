@@ -283,6 +283,7 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 
 ## Roadmap
 
+* Update data to include 2020
 * Enhance prophet model
   * Calculate daily accuracy for prophet models
   * Build prophet model on full data set
