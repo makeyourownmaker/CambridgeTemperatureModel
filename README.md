@@ -283,22 +283,26 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 
 ## Roadmap
 
-* Update data to include 2020
-* Enhance prophet model
-  * Calculate daily accuracy for prophet models
-  * Build prophet model on full data set
-  * Explore adding additional regressors
-* Add more time series models
-  * I have some [GAM](https://en.wikipedia.org/wiki/Generalized_additive_model)
-    forecasts which are nearing completion
-  * [TSA](https://cran.r-project.org/web/packages/TSA/index.html) supports multiple seasonalities and
-    exogenous variables with the arimax() function
-  * [bsts](https://cran.r-project.org/web/packages/bsts/index.html) *if* it supports multi-seasonality
-    * spike-and-slab priors are quite appealing for adding regressors in a principled manner
-* Add some statistical learning models
-  * Support vector regression, modern neural networks etc may have some utility
-* Improve documentation
-  * Describe cross-validation
+ * Update data to include 2020
+ * Add standard deviations to MSE, MAE and MAPE values
+ * Examine [Global Forecast System](https://www.ncdc.noaa.gov/data-access/model-data/model-datasets/global-forcast-system-gfs) (GFS) weather model
+   * runs four times a day, produces forecasts up to 16 days in advance
+   * data is available for free in the public domain
+   * model serves as the basis for the forecasts of numerous services
+   * potentially use as additional exogeneous variables
+ * Enhance prophet model
+   * Calculate daily accuracy for prophet models
+   * Build prophet model on full data set
+   * Explore adding additional regressors
+ * Add more time series models
+   * I have some [GAM](https://en.wikipedia.org/wiki/Generalized_additive_model)
+     forecasts which are nearing completion
+   * [TSA](https://cran.r-project.org/web/packages/TSA/index.html) supports multiple seasonalities and
+     exogenous variables with the arimax() function
+ * Add some statistical learning models
+   * Support vector regression, gradient boosted trees, modern neural networks etc may have some utility
+ * Improve documentation
+   * Describe cross-validation
 
 
 ## Contributing
