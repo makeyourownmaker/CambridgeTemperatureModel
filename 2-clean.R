@@ -135,6 +135,21 @@ summary(weather.08.08.01.cc[-influential, .(temperature, humidity, dew.point, pr
 weather.08.08.01.cc <- weather.08.08.01.cc[-influential,]
 
 
+# Remove long runs of consecutively equal values
+# So far (30/03/21) only temperature has this problem
+# and only once but for almost 36 days!
+# And not marked in the known inaccuracies :-(
+b <- rle(weather.08.08.01.cc$temperature)
+weather.rle <- data.frame(number = b$values, lengths = b$lengths)
+weather.rle$end <- cumsum(weather.rle$lengths)
+weather.rle$start <- weather.rle$end - weather.rle$lengths + 1
+weather.rle[order(weather.rle$lengths), ]
+tail(weather.rle[order(weather.rle$lengths), ])
+weather.08.08.01.cc[unlist(weather.rle[weather.rle$lengths==max(weather.rle$lengths), c('start', 'end')]), timestamp]
+# [1] 2015-11-30 11:30:00 2016-01-08 15:00:00
+weather.08.08.01.cc <- weather.08.08.01.cc[ds < '2015-11-30 11:30:00' | ds > '2016-01-08 15:00:00', ]
+
+
 fnRDS <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".RData")
 fnCSV <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".csv")
 fnRData <- paste0("data/CambridgeTemperatureModel", format(Sys.time(), "%Y.%m.%d"), ".RData")
