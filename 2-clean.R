@@ -135,6 +135,10 @@ summary(weather.08.08.01.cc[-influential, .(temperature, humidity, dew.point, pr
 weather.08.08.01.cc <- weather.08.08.01.cc[-influential,]
 
 
-saveRDS(weather.08.08.01.cc[, .(temperature, dew.point, humidity, pressure, wind.speed.mean, wind.bearing.mean, ds)], "data/CamMetCleanish.RData")
-save.image("data/CambridgeTemperatureModel.RData")
+fnRDS <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".RData")
+fnCSV <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".csv")
+fnRData <- paste0("data/CambridgeTemperatureModel", format(Sys.time(), "%Y.%m.%d"), ".RData")
+saveRDS(weather.08.08.01.cc[, .(temperature, dew.point, humidity, pressure, wind.speed.mean, wind.bearing.mean, ds)], fnRDS)
+write.csv(weather.08.08.01.cc[, .(ds, year, doy, time, y=temperature, humidity, dew.point, pressure, wind.speed.mean, wind.bearing.mean, wind.speed.max)], fnCSV, row.names=FALSE)
+save.image(fnRData)
 
