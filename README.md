@@ -283,7 +283,6 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 
 ## Roadmap
 
- * Update data to include 2020
  * Add standard deviations to MSE, MAE and MAPE values
  * Examine [Global Forecast System](https://www.ncdc.noaa.gov/data-access/model-data/model-datasets/global-forcast-system-gfs) (GFS) weather model
    * runs four times a day, produces forecasts up to 16 days in advance
