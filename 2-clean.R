@@ -139,13 +139,26 @@ weather.08.08.01.cc <- weather.08.08.01.cc[-influential,]
 # So far (30/03/21) only temperature has this problem
 # and only once but for almost 36 days!
 # And not marked in the known inaccuracies :-(
-b <- rle(weather.08.08.01.cc$temperature)
-weather.rle <- data.frame(number = b$values, lengths = b$lengths)
-weather.rle$end <- cumsum(weather.rle$lengths)
-weather.rle$start <- weather.rle$end - weather.rle$lengths + 1
-weather.rle[order(weather.rle$lengths), ]
-tail(weather.rle[order(weather.rle$lengths), ])
-weather.08.08.01.cc[unlist(weather.rle[weather.rle$lengths==max(weather.rle$lengths), c('start', 'end')]), timestamp]
+get_consec_run_lengths <- function(data, column, n=6) {
+  b <- rle(data[, column])
+  weather.rle <- data.frame(number = b$values, lengths = b$lengths)
+  weather.rle$end <- cumsum(weather.rle$lengths)
+  weather.rle$start <- weather.rle$end - weather.rle$lengths + 1
+  weather.rle[order(weather.rle$lengths), ]
+  print(tail(weather.rle[order(weather.rle$lengths), ], n))
+  flush.console()
+  cat("\n")
+  print(data[unlist(weather.rle[weather.rle$lengths==max(weather.rle$lengths), c('start', 'end')]), 'timestamp'])
+  flush.console()
+}
+
+get_consec_run_lengths(weather.08.08.01.cc, 'humidity')
+get_consec_run_lengths(weather.08.08.01.cc, 'dew.point')
+get_consec_run_lengths(weather.08.08.01.cc, 'pressure')
+get_consec_run_lengths(weather.08.08.01.cc, 'wind.speed.mean')
+get_consec_run_lengths(weather.08.08.01.cc, 'wind.bearing.mean')
+get_consec_run_lengths(weather.08.08.01.cc, 'wind.speed.max')
+get_consec_run_lengths(weather.08.08.01.cc, 'temperature')
 # [1] 2015-11-30 11:30:00 2016-01-08 15:00:00
 weather.08.08.01.cc <- weather.08.08.01.cc[ds < '2015-11-30 11:30:00' | ds > '2016-01-08 15:00:00', ]
 
