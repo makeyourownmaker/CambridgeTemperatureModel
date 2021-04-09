@@ -266,6 +266,26 @@ get_consec_run_lengths(weather.08.08.01, 'temperature')
 weather.08.08.01 <- weather.08.08.01[ds < '2015-11-30 11:30:00' | ds > '2016-01-08 15:00:00', ]
 
 
+
+# Check for measurement spikes
+# Where spikes are sudden large increasing/decreasing observations
+# followed by approximate return to previous value
+get_large_spikes  <- function(data, col, sd.factor=3) {
+  diffs <- weather.filled[, .(ds, get(col), diff.before=get(col) - shift(get(col)), diff.after=get(col) - shift(get(col), type='lead'))]
+  print(summary(diffs))
+  flush.console()
+  cat("\n")
+  diff.before.sd <- sd.factor * sd(diffs$diff.before, na.rm=TRUE)
+  diff.after.sd  <- sd.factor * sd(diffs$diff.after,  na.rm=TRUE)
+  diffs[abs(diff.before) > diff.before.sd & abs(diff.after) > diff.after.sd,]
+}
+get_large_spikes(weather.filled, 'temperature')
+get_large_spikes(weather.filled, 'humidity')
+get_large_spikes(weather.filled, 'pressure')
+get_large_spikes(weather.filled, 'dew.point')
+get_large_spikes(weather.filled, 'wind.speed.mean')
+
+
 # Fill weather.isd NAs with isd.filled values
 isd.renamed <- isd.filled[, .(ds=time, temperature=temp*10, humidity=rh, dew.point=dew_point, pressure=NA, wind.speed.mean=ws*10, wind.bearing.mean=wd)]
 weather.isd <- merge(weather.08.08.01, isd.renamed, by='ds', all.x=TRUE, all.y=TRUE)
