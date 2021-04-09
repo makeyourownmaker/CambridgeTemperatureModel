@@ -18,6 +18,7 @@ To install the required libraries in an R session:
 ```r
 install.packages("caret", dependencies = c("Depends", "Suggests"))
 install.packages("data.table")
+install.packages("stationaRy")
 install.packages("lubridate")
 install.packages("forecast")
 install.packages("prophet")
@@ -258,8 +259,10 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 
  * [1-load.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/1-load.R)
    * Download data, set variable types and adds some date and time related fields
+     * Both computer lab and [NOAA ISD](https://www.ncdc.noaa.gov/isd) Cambridge airport data
  * [2-clean.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/2-clean.R)
    * Remove known [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) and other unrealistic measurements
+   * Use [NOAA ISD](https://www.ncdc.noaa.gov/isd) Cambridge airport data to replace missing values where possible
  * [3.01-eda.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3.01-eda.R)
      * Temperature time series plot and stationarity tests
      * This script will create a directory called figures if it doesn't already exist
@@ -299,7 +302,7 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * [TSA](https://cran.r-project.org/web/packages/TSA/index.html) supports multiple seasonalities and
      exogenous variables with the arimax() function
  * Add some statistical learning models
-   * Support vector regression, gradient boosted trees, modern neural networks etc may have some utility
+   * Gradient boosted trees, modern neural networks etc
  * Improve documentation
    * Describe cross-validation
 
