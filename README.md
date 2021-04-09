@@ -287,6 +287,10 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 ## Roadmap
 
  * Add standard deviations to MSE, MAE and MAPE values
+ * Further develop data cleaning
+   * The Cook's distance based outlier removal would benefit from a seasonal component
+   * Establish exclusion criteria for large "spike" values
+   * Establish exclusion criteria for computer lab and airport data comparisons
  * Examine [Global Forecast System](https://www.ncdc.noaa.gov/data-access/model-data/model-datasets/global-forcast-system-gfs) (GFS) weather model
    * runs four times a day, produces forecasts up to 16 days in advance
    * data is available for free in the public domain
