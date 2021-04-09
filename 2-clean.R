@@ -215,7 +215,8 @@ cooksd <- cooks.distance(mod)
 plot(cooksd, main="Influential Obs by Cooks distance") # slow
 text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd > 20*mean(cooksd, na.rm=T), names(cooksd), ""), col="red")  # add labels
 
-# TODO Use more principled approach to outlier removal
+# TODO Use more principled approach to outlier removal - possibly seasonal
+# TODO Repeat with lm() model and Cook's distance calculation with isd.filled data
 # 10*mean(cooksd) is a bit arbitrary
 abline(h = 10*mean(cooksd, na.rm=T), col="red")  # add cutoff line
 
@@ -243,6 +244,7 @@ weather.08.08.01$doy <- NULL
 # So far (30/03/21) temperature has this problem
 # and only once but for almost 36 days!
 # And not marked in the known inaccuracies :-(
+# TODO Establish better exclusion threshold values for weather.filled
 get_consec_run_lengths <- function(data, column, n=6) {
   b <- rle(data[, ..column])
   weather.rle <- data.frame(number = b$values, lengths = b$lengths)
@@ -270,8 +272,9 @@ weather.08.08.01 <- weather.08.08.01[ds < '2015-11-30 11:30:00' | ds > '2016-01-
 # Check for measurement spikes
 # Where spikes are sudden large increasing/decreasing observations
 # followed by approximate return to previous value
-get_large_spikes  <- function(data, col, sd.factor=3) {
-  diffs <- weather.filled[, .(ds, get(col), diff.before=get(col) - shift(get(col)), diff.after=get(col) - shift(get(col), type='lead'))]
+# TODO Establish exclusion threshold values for weather.filled
+get_large_spikes  <- function(data, col, ts, sd.factor=3) {
+  diffs <- data[, .(get(ts), get(col), diff.before=get(col) - shift(get(col)), diff.after=get(col) - shift(get(col), type='lead'))]
   print(summary(diffs))
   flush.console()
   cat("\n")
@@ -279,11 +282,16 @@ get_large_spikes  <- function(data, col, sd.factor=3) {
   diff.after.sd  <- sd.factor * sd(diffs$diff.after,  na.rm=TRUE)
   diffs[abs(diff.before) > diff.before.sd & abs(diff.after) > diff.after.sd,]
 }
-get_large_spikes(weather.filled, 'temperature')
-get_large_spikes(weather.filled, 'humidity')
-get_large_spikes(weather.filled, 'pressure')
-get_large_spikes(weather.filled, 'dew.point')
-get_large_spikes(weather.filled, 'wind.speed.mean')
+get_large_spikes(weather.filled, 'temperature', 'ds')
+get_large_spikes(weather.filled, 'humidity',  'ds')
+get_large_spikes(weather.filled, 'pressure',  'ds')
+get_large_spikes(weather.filled, 'dew.point', 'ds')
+get_large_spikes(weather.filled, 'wind.speed.mean', 'ds')
+
+get_large_spikes(isd.filled, 'temp', 'time')
+get_large_spikes(isd.filled, 'rh', 'time')
+get_large_spikes(isd.filled, 'dew_point', 'time')
+get_large_spikes(isd.filled, 'ws', 'time')
 
 
 # Fill weather.isd NAs with isd.filled values
@@ -306,6 +314,7 @@ summary(weather.filled[is.na(temperature)])
 # Which data source is more correct though?
 # Potentially exclude 1 or 2 thousand more measurements
 # Consider using 4 or 5 * sd
+# TODO Establish exclusion threshold values for weather.filled
 sd.factor <- 5
 temp.sd <- sd.factor * sd(weather.isd[, .(ds, temperature.x - temperature.y)][!is.na(V2), V2])
 # [1] 42.93843
