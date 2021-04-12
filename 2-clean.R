@@ -1,6 +1,9 @@
 
-# Cambridge Weather History Inaccuracies
-# https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html
+######################################################################################################################################################
+# 1. Compare Computer Lab and Cambridge Airport (ISD) measurements
+#    Calculate correlations and plot observation distributions
+#    Remove obvious outliers from both data sets
+#    Annecdotally, Cambridge Airport appears to be higher quality data source
 
 
 # On 31st July 2008, the readings for humidity pressure and wind speed stuck at about 6pm BST. The logger was reset on 1st August at about 9:00am
@@ -92,6 +95,11 @@ weather.08.08.01[pressure < 950,  'pressure'] <- NA
 weather.08.08.01[pressure > 1055, 'pressure'] <- NA
 
 
+######################################################################################################################################################
+# 2. Remove known historical inaccuracies
+#    https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html
+
+
 # rainfall and sunny measurements are known to be very problematic
 # Not using for now
 # Better not have -ve rainfall
@@ -125,11 +133,8 @@ weather.08.08.01[pressure > 1055, 'pressure'] <- NA
 # Unrealistic low temperature fix
 #weather.08.08.01 <- weather.08.08.01[temperature != -400, ]
 
-
 # Remove unusual secs values
 weather.08.08.01 <- weather.08.08.01[secs %in% seq(0, 86400, 1800), ]
-
-
 
 # On 12th August 2008, rainfall was not recorded, despite heavy rain falling over Cambridge in the morning.
 #weather.08.08.01 <- weather.08.08.01[ds != '2008-08-12', ]
@@ -205,7 +210,17 @@ weather.08.08.01[ds >= '2015-01-28 11:00' & ds < '2015-02-02 18:00', 'humidity']
 weather.08.08.01[ds >= '2015-01-28 11:00' & ds < '2015-02-02 18:00', 'dew.point'] <- NA
 
 
-# See http://r-statistics.co/Outlier-Treatment-With-R.html
+######################################################################################################################################################
+# 3. Remove Computer Lab outliers using Cook's distance
+#    See http://r-statistics.co/Outlier-Treatment-With-R.html
+#    10*mean(cooksd) is a fairly arbitrary threshold
+#    TODO Use more principled approach to outlier removal
+#         Possibly seasonal - bin cooksd values into days 48 * 12 = 576 big bins :-)
+#                             calculate 99th or higher centile
+#                             build loess model
+#    TODO Repeat with lm() model and Cook's distance calculation with isd.filled data
+
+
 weather.08.08.01[,year:=as.numeric(strftime(ds, format = "%Y"))]
 weather.08.08.01[, doy:=as.numeric(strftime(ds, format = "%j"))]
 mod <- lm(secs+doy+year ~ temperature+humidity+dew.point+pressure+wind.speed.mean+wind.bearing.mean, data=weather.08.08.01)
@@ -215,9 +230,6 @@ cooksd <- cooks.distance(mod)
 plot(cooksd, main="Influential Obs by Cooks distance") # slow
 text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd > 20*mean(cooksd, na.rm=T), names(cooksd), ""), col="red")  # add labels
 
-# TODO Use more principled approach to outlier removal - possibly seasonal
-# TODO Repeat with lm() model and Cook's distance calculation with isd.filled data
-# 10*mean(cooksd) is a bit arbitrary
 abline(h = 10*mean(cooksd, na.rm=T), col="red")  # add cutoff line
 
 table(cooksd > 10*mean(cooksd, na.rm=T))
@@ -238,15 +250,18 @@ weather.08.08.01$year <- NULL
 weather.08.08.01$doy <- NULL
 
 
+######################################################################################################################################################
+# 4. Remove long runs of consecutively equal values
+#    What threshold to use for number of consecutive values?
+#    So far (30/03/21) the worst offender here is temperature which was
+#    stuck at the same value for 36 days!
+#    And not marked in the known inaccuracies :-(
+#    TODO Establish better exclusion threshold values (sd.factor) for weather.filled
 
-# Remove long runs of consecutively equal values
-# What threshold to use for number of consecutive values?
-# So far (30/03/21) temperature has this problem
-# and only once but for almost 36 days!
-# And not marked in the known inaccuracies :-(
-# TODO Establish better exclusion threshold values for weather.filled
-get_consec_run_lengths <- function(data, column, n=6) {
+
+get_consec_run_lengths <- function(data, column, sd.factor=3, n=6) {
   b <- rle(data[, ..column])
+  lengths.sd = sd(b$lengths)
   weather.rle <- data.frame(number = b$values, lengths = b$lengths)
   weather.rle$end <- cumsum(weather.rle$lengths)
   weather.rle$start <- weather.rle$end - weather.rle$lengths + 1
@@ -254,7 +269,8 @@ get_consec_run_lengths <- function(data, column, n=6) {
   print(tail(weather.rle[order(weather.rle$lengths), ], n))
   flush.console()
   cat("\n")
-  print(data[unlist(weather.rle[weather.rle$lengths==max(weather.rle$lengths), c('start', 'end')]), 'ds'])
+  # print(data[unlist(weather.rle[weather.rle$lengths==max(weather.rle$lengths), c('start', 'end')]), 'ds'])
+  print(data[unlist(weather.rle[weather.rle$lengths >= sd.factor * lengths.sd, c('start', 'end')]), 'ds'])
   flush.console()
 }
 
@@ -269,12 +285,16 @@ weather.08.08.01 <- weather.08.08.01[ds < '2015-11-30 11:30:00' | ds > '2016-01-
 
 
 
-# Check for measurement spikes
-# Where spikes are sudden large increasing/decreasing observations
-# followed by approximate return to previous value
-# TODO Establish exclusion threshold values for weather.filled
-get_large_spikes  <- function(data, col, ts, sd.factor=3) {
-  diffs <- data[, .(get(ts), get(col), diff.before=get(col) - shift(get(col)), diff.after=get(col) - shift(get(col), type='lead'))]
+######################################################################################################################################################
+# 5. Check for measurement "spikes"
+#    Where spikes are sudden large increasing/decreasing observations
+#    followed by approximate return to previous value
+#    So far, spikes are limited to lengths of 1 observation
+#    TODO Establish exclusion threshold (sd.factor) values for weather.filled
+
+
+get_large_spikes  <- function(data, varcol, tscol, sd.factor=3) {
+  diffs <- data[, .(get(tscol), get(varcol), diff.before=get(varcol) - shift(get(varcol)), diff.after=get(varcol) - shift(get(varcol), type='lead'))]
   print(summary(diffs))
   flush.console()
   cat("\n")
@@ -282,19 +302,23 @@ get_large_spikes  <- function(data, col, ts, sd.factor=3) {
   diff.after.sd  <- sd.factor * sd(diffs$diff.after,  na.rm=TRUE)
   diffs[abs(diff.before) > diff.before.sd & abs(diff.after) > diff.after.sd,]
 }
+
 get_large_spikes(weather.filled, 'temperature', 'ds')
-get_large_spikes(weather.filled, 'humidity',  'ds')
-get_large_spikes(weather.filled, 'pressure',  'ds')
-get_large_spikes(weather.filled, 'dew.point', 'ds')
+get_large_spikes(weather.filled, 'humidity',    'ds')
+get_large_spikes(weather.filled, 'pressure',    'ds')
+get_large_spikes(weather.filled, 'dew.point',   'ds')
 get_large_spikes(weather.filled, 'wind.speed.mean', 'ds')
 
 get_large_spikes(isd.filled, 'temp', 'time')
-get_large_spikes(isd.filled, 'rh', 'time')
+get_large_spikes(isd.filled, 'rh',   'time')
 get_large_spikes(isd.filled, 'dew_point', 'time')
 get_large_spikes(isd.filled, 'ws', 'time')
 
 
-# Fill weather.isd NAs with isd.filled values
+######################################################################################################################################################
+# 6. Fill Computer Lab (weather.isd) NAs with Cambridge Airport (isd.filled) values
+
+
 isd.renamed <- isd.filled[, .(ds=time, temperature=temp*10, humidity=rh, dew.point=dew_point, pressure=NA, wind.speed.mean=ws*10, wind.bearing.mean=wd)]
 weather.isd <- merge(weather.08.08.01, isd.renamed, by='ds', all.x=TRUE, all.y=TRUE)
 weather.filled <- weather.isd[, .(ds,
@@ -310,38 +334,47 @@ summary(weather.filled[is.na(wind.bearing.mean)])
 summary(weather.filled[is.na(temperature)])
 
 
-# Use weather.isd to find weather.08.08.01 outliers
-# Which data source is more correct though?
-# Potentially exclude 1 or 2 thousand more measurements
-# Consider using 4 or 5 * sd
-# TODO Establish exclusion threshold values for weather.filled
-sd.factor <- 5
-temp.sd <- sd.factor * sd(weather.isd[, .(ds, temperature.x - temperature.y)][!is.na(V2), V2])
-# [1] 42.93843
-summary(weather.isd[, .(temperature.x - temperature.y)][!is.na(V1)])
-weather.isd[, .(ds, temperature.x, temperature.y, temperature.x - temperature.y)][!is.na(V4) & abs(V4) > temp.sd, .(ds, V4, temperature.x, temperature.y)]
+######################################################################################################################################################
+# 7. Use Cambridge Airport (weather.isd) to find Computer Lab (weather.08.08.01) outliers
+#    Potentially exclude 1 or 2 thousand more measurements
+#    TODO Establish exclusion threshold values (sd.factor) for weather.filled
 
-humidity.sd <- sd.factor * sd(weather.isd[, .(ds, humidity.x - humidity.y)][!is.na(V2), V2])
-# [1] 23.66685
-summary(weather.isd[, .(humidity.x - humidity.y)][!is.na(V1)])
-weather.isd[, .(ds, humidity.x, humidity.y, humidity.x - humidity.y)][!is.na(V4) & abs(V4) > humidity.sd, .(ds, V4, humidity.x, humidity.y)]
 
-sd.factor <- 4
-dew.point.sd <- sd.factor * sd(weather.isd[, .(ds, dew.point.x - dew.point.y)][!is.na(V2), V2])
-# [1] 139.5939
-summary(weather.isd[, .(dew.point.x - dew.point.y)][!is.na(V1)])
-weather.isd[, .(ds, dew.point.x, dew.point.y, dew.point.x - dew.point.y)][!is.na(V4) & abs(V4) > dew.point.sd, .(ds, V4, dew.point.x, dew.point.y)]
+get_cl_outliers_using_isd <- function(data, varcol, tscol, sd.factor=3) {
+  varcol.x <- paste0(varcol, '.x')
+  varcol.y <- paste0(varcol, '.y')
+  varcol.sd <- sd.factor * sd(data[, .(get(varcol.x) - get(varcol.y))][!is.na(V1), V1], na.rm=TRUE)
+  cat(paste("sd threshold: ", round(varcol.sd, 2), "\n\n"))
+  flush.console()
 
-sd.factor <- 5
-wind.speed.sd <- sd.factor * sd(weather.isd[, .(ds, wind.speed.mean.x - wind.speed.mean.y)][!is.na(V2), V2])
-# [1] 72.53462
-summary(weather.isd[, .(wind.speed.mean.x - wind.speed.mean.y)][!is.na(V1)])
-weather.isd[, .(ds, wind.speed.mean.x, wind.speed.mean.y, wind.speed.mean.x - wind.speed.mean.y)][!is.na(V4) & abs(V4) > wind.speed.sd, .(ds, V4, wind.speed.mean.x, wind.speed.mean.y)]
+  print(summary(data[, .(get(varcol.x) - get(varcol.y))][!is.na(V1)]))
+  cat("\n")
+  flush.console()
 
-wind.bearing.sd <- sd.factor * sd(weather.isd[, .(ds, wind.bearing.mean.x - wind.bearing.mean.y)][!is.na(V2), V2])
-# [1] 207.7295
-summary(weather.isd[, .(wind.bearing.mean.x - wind.bearing.mean.y)][!is.na(V1)])
-weather.isd[, .(ds, wind.bearing.mean.x, wind.bearing.mean.y, wind.bearing.mean.x - wind.bearing.mean.y)][!is.na(V4) & abs(V4) > wind.bearing.sd, .(ds, V4, wind.bearing.mean.x, wind.bearing.mean.y)]
+  data$row.no <- rownames(data)
+  print(data[, .(get(tscol),
+                 get(varcol.x),
+                 get(varcol.y),
+                 get(varcol.x) - get(varcol.y),
+                 row.no)][!is.na(V4) & abs(V4) > varcol.sd, .(time=V1,
+                                                              diff=V4,
+                                                              varcol.x=V2,
+                                                              varcol.y=V3,
+                                                              row.no)])
+  flush.console()
+
+  return(data[, .(get(varcol.x) - get(varcol.y),
+                  row.no)][!is.na(V1) & abs(V1) > varcol.sd, row.no])
+}
+
+get_cl_outliers_using_isd(weather.isd, 'temperature', 'ds', 5)
+get_cl_outliers_using_isd(weather.isd, 'humidity',    'ds', 5)
+get_cl_outliers_using_isd(weather.isd, 'dew.point',   'ds', 4)
+get_cl_outliers_using_isd(weather.isd, 'wind.speed.mean', 'ds', 5)
+
+
+######################################################################################################################################################
+# 8. Save data
 
 
 fnRDS <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".RData")
