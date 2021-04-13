@@ -291,6 +291,10 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * The Cook's distance based outlier removal would benefit from a seasonal component
    * Establish exclusion criteria for large "spike" values
    * Establish exclusion criteria for computer lab and airport data comparisons
+   * Investigate missing airport pressure data
+     * Consider alternatives to [stationaRy](https://github.com/rich-iannone/stationaRy) like [ropensci/isdparser](https://github.com/ropensci/isdparser)
+     * [ropensci/riem](https://github.com/ropensci/riem) queries global ASOS data from [IEM](https://mesonet.agron.iastate.edu/ASOS/)
+       * ASOS data from IEM has 30 min updates for Cambridge airport
  * Examine [Global Forecast System](https://www.ncdc.noaa.gov/data-access/model-data/model-datasets/global-forcast-system-gfs) (GFS) weather model
    * runs four times a day, produces forecasts up to 16 days in advance
    * data is available for free in the public domain
