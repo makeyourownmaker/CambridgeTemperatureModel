@@ -137,7 +137,8 @@ Cambridge Airport weather measurements from [ISD](https://www.ncdc.noaa.gov/isd)
 were used to find outliers in the Computer Laboratory measurements and to replace
 missing values.  The [stationaRy](https://github.com/rich-iannone/stationaRy)
 package was used to download the ISD data.  Unfortunately there are no pressure
-measurements.  Data cleaning and limited interpolation were applied to
+measurements.  The ISD data is somewhat cleaner than the Computer lab data.
+Data cleaning and limited interpolation were applied to
 the Cambridge Airport data before being used to replace NAs in the Computer lab
 data.
 
