@@ -1,40 +1,196 @@
 
 ######################################################################################################################################################
-# 1. Compare Computer Lab and Cambridge Airport (ISD) measurements
+# 1. Remove known historical inaccuracies
+#    https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html
+
+
+# On 31st July 2008, the readings for humidity pressure and wind speed stuck
+# at about 6pm BST. The logger was reset on 1st August at about 9:00am
+weather.08.08.01 <- weather.raw[ds > '2008-08-01 00:00:00']
+weather.08.08.01 <- data.table(weather.08.08.01)
+weather.08.08.01 <- weather.08.08.01[, .(ds,
+                                         temperature,
+                                         humidity,
+                                         dew.point,
+                                         pressure,
+                                         wind.speed.mean,
+                                         wind.bearing.mean,
+                                         wind.speed.max,
+                                         secs)]
+setkey(weather.08.08.01, ds)
+
+# rainfall and sunny measurements are known to be very problematic
+# Not using for now
+# Better not have -ve rainfall
+#weather.08.08.01 <-  weather.08.08.01[rainfall >= 0]
+
+# Low humidity problem from 2015-11-24 08:30:00 to 2015-11-27 13:00:00
+# all 3 or less (very influential)
+# 20 here is a bit arbitrary but agrees with ISD Cam data
+#weather.08.08.01[humidity < 20, 'humidity'] <- NA
+
+# Exclude (individually)
+#weather.08.08.01[sunny==1 & ds < sunrise]
+#weather.08.08.01[sunny==1 & ds > sunset]
+
+#weather.08.08.01 <- weather.08.08.01[!(sunny==1 & ds < sunrise)]
+#weather.08.08.01 <- weather.08.08.01[!(sunny==1 & ds > sunset)]
+#dim(weather.08.08.01)
+
+#weather.08.08.01 <- weather.08.08.01[, !c("rainfall", "sunshine")]
+
+# Find max UK and Cambridge recorded wind speeds?
+#   Remove anything greater than 350
+#   Based on ISD Cam data and boxplot
+#weather.08.08.01 <- weather.08.08.01[wind.speed.max <= 600]
+#weather.08.08.01 <- weather.08.08.01[wind.speed.mean <= 600]
+#weather.08.08.01[wind.speed.max >= 350, 'wind.speed.max'] <- NA
+#weather.08.08.01[wind.speed.mean >= 350, 'wind.speed.mean'] <- NA
+
+# Remove unusual wind bearings fix
+# Don't remove - replace with NAs?!
+#weather.08.08.01 <- weather.08.08.01[wind.bearing.mean %in% seq(0, 360, 45), 'wind.bearing.mean'] <- NA
+
+# Unrealistic low temperature fix
+#weather.08.08.01 <- weather.08.08.01[temperature != -400, ]
+
+# Remove unusual secs values
+weather.08.08.01 <- weather.08.08.01[secs %in% seq(0, 86400, 1800), ]
+
+# On 12th August 2008, rainfall was not recorded, despite heavy rain falling over
+# Cambridge in the morning.
+#weather.08.08.01 <- weather.08.08.01[ds != '2008-08-12', ]
+
+# From 19th August 2008 to 27th August 2008 inclusive, rainfall was not recorded
+#weather.08.08.01 <- weather.08.08.01[ds < '2008-08-19' | ds > '2008-08-27', ]
+
+# From 3rd September 2008 to 4th September 2008 at about 1pm, rainfall was again not
+# recorded due to a blocked sensor
+#weather.08.08.01 <- weather.08.08.01[ds != '2008-09-03' & ds != '2008-09-04', ]
+
+# From 25th October 2008 to 4th November 2008, rainfall was again not correctly recorded
+# due to a partially blocked sensor.
+# Some rainfall was recorded, but the amounts recorded are far too small to be correct.
+#weather.08.08.01 <- weather.08.08.01[ds < '2008-10-25' | ds > '2008-11-04', ]
+
+# On 3rd April 2009 the Sunshine and Humidity sensors became stuck. Readings for Temperature
+# and Humidity until 17:30 are known to be wrong
+weather.08.08.01[ds >= '2009-04-03 00:00' & ds < '2009-04-03 17:30', 'temperature'] <- NA
+weather.08.08.01[ds >= '2009-04-03 00:00' & ds < '2009-04-03 17:30', 'humidity'] <- NA
+
+# The Sunshine sensor appears to have become a daylight sensor - the threshold for
+# determining 'Sunny' has changed, possibly from 3rd April when it was first noticed
+# that it had become stuck.
+
+# Over the Easter weekend of 10th April 2009 to 13th April 2009, the rainfall was not
+# recorded (blocked sensor again).
+# It was unblocked on the Tuesday once we could gain access.
+#weather.08.08.01 <- weather.08.08.01[ds < '2009-04-10' | ds > '2009-04-13', ]
+
+# Between 6th and 28th February, the rainfall sensor has not been recording any rainfall,
+# due to water damage (!) to one of the cables.
+#weather.08.08.01 <- weather.08.08.01[ds < '2010-02-06' | ds > '2010-02-28', ]
+
+# No results were recorded for 14th August 2010, and there was an interruption on 16th
+# August 2010 due to a power failure
+weather.08.08.01[ds >= '2010-08-14 00:00' & ds < '2010-08-14 21:00', ]
+# Insert missing NAs further below
+weather.08.08.01[ds >= '2010-08-16 00:00' & ds < '2010-08-16 23:30', ]
+# temperature may be stuck between 2010-08-16 00:30:00 and 2010-08-16 06:30:00
+# otherwise looks OK - No changes
+
+# A blocked rain sensor on 23rd August 2010 may have given high readings for rainfall on
+# that day.
+#weather.08.08.01 <- weather.08.08.01[ds != '2010-08-23', ]
+
+# A blocked rain sensor on 26rd February 2011 gave extreme readings for rainfall on that
+# day of >170mm. A few mm would be a more realistic amount.
+#weather.08.08.01 <- weather.08.08.01[ds != '2011-02-26', ]
+
+# A blocked rain sensor from 19th August 2011 to 23rd August 2011 gave gave extreme readings
+# for rainfall whenever it rained.
+# It really isn't clear why a blocked sensor registers an excess of rainfall, rather than
+# just none. Perhaps 10mm for 19th,
+# and 4mm up to 1pm on the 23rd would be a better estimate.
+#weather.08.08.01 <- weather.08.08.01[ds < '2011-08-19' | ds > '2011-08-23', ]
+
+# The rain sensor failed completely on 6th September. We will endeavour to find a
+# replacement as soon as possible.
+
+# On 30 October 2011, the data logging system experienced a failure at 1:00 AM. No data was
+# recorded until 11:28 AM on 31 October 2011.
+# We will investigate the issues that led to the interruption. A temporary fix was found for
+# the rain sensor, but until replaced the
+# recorded precipitation data should not be trusted.
+weather.08.08.01[ds >= '2011-10-30 01:00' & ds < '2011-10-31 11:30', ]
+# Insert missing NAs further below
+
+# On Tuesday 10 January 2012, no data has been recorded between 8:30 AM and 3:30 PM. This
+# was due to a scheduled power outage in the Computer Laboratory building, followed by some
+# issues on cold-starting the weather logging system.
+weather.08.08.01[ds >= '2012-01-10 08:30' & ds < '2012-01-10 15:30', ]
+# Insert missing NAs further below
+
+# On 30 January 2012, a planned interruption occured between 4:30 PM and 6:30 PM. On this
+# occasion, we have updated our logging software to process data from the new precipitation
+# sensor (Thies Clima). As a result of a data processing error, some precipitation readings
+# later that day and early morning on 31 January are negative. A fix is in place as of 31
+# Jan 2012, 4:30 PM.
+#weather.08.08.01 <- weather.08.08.01[ds < '2012-01-30' | ds > '2012-01-31', ]
+# 3 readings which look reasonable - no changes
+
+# On 20 August 2012, a cottonwood seed stuck in the sensor area (protective caps) and moved
+# around by the wind caused erroneous precipitation readings before 2:26 PM.
+#weather.08.08.01 <- weather.08.08.01[ds != '2012-08-20', ]
+
+# On the 28th January 2015 around 11:00 AM, the humidity sensor connection became
+# intermittant due to corrosion.
+# Humidity and Dew Point readings were unreliable and occasionally erratic until
+# the issue was resolved on the 2nd February 2015 at 6:00PM
+weather.08.08.01[ds >= '2015-01-28 11:00' & ds < '2015-02-02 18:00', 'humidity'] <- NA
+weather.08.08.01[ds >= '2015-01-28 11:00' & ds < '2015-02-02 18:00', 'dew.point'] <- NA
+
+
+######################################################################################################################################################
+# 2. Compare Computer Lab and Cambridge Airport (ISD) measurements
 #    Calculate correlations and plot observation distributions
 #    Remove obvious outliers from both data sets
 #    Annecdotally, Cambridge Airport appears to be higher quality data source
 
 
-# On 31st July 2008, the readings for humidity pressure and wind speed stuck at about 6pm BST. The logger was reset on 1st August at about 9:00am
-weather.08.08.01 <- weather.raw[ds > '2008-08-01 00:00:00']
-weather.08.08.01 <- data.table(weather.08.08.01)
-weather.08.08.01 <- weather.08.08.01[, .(ds, temperature, humidity, dew.point, pressure, wind.speed.mean, wind.bearing.mean, wind.speed.max, secs)]
-setkey(weather.08.08.01, ds)
-
 setkey(isd.filled, time)
 
-weather.cors <- weather.08.08.01[isd.filled, .(ds, temperature, temp, humidity, rh, dew.point, dew_point, wind.speed.mean, ws, wind.bearing.mean, wd)]
+weather.cors <- weather.08.08.01[isd.filled, .(ds,
+                                               temperature,
+                                               temp,
+                                               humidity,
+                                               rh,
+                                               dew.point,
+                                               dew_point,
+                                               wind.speed.mean,
+                                               ws,
+                                               wind.bearing.mean,
+                                               wd)]
 
 cor(weather.cors[complete.cases(weather.cors), .(temperature, temp*10)])
 #             temperature        V2
-# temperature   1.0000000 0.9746221
-# V2            0.9746221 1.0000000
+# temperature   1.0000000 0.9745562
+# V2            0.9745562 1.0000000
 
 cor(weather.cors[complete.cases(weather.cors), .(dew.point, dew_point*10)])
 #           dew.point        V2
-# dew.point 1.0000000 0.9081663
-# V2        0.9081663 1.0000000
+# dew.point 1.0000000 0.9117574
+# V2        0.9117574 1.0000000
 
 cor(weather.cors[complete.cases(weather.cors), .(humidity, rh)])
 #           humidity        rh
-# humidity 1.0000000 0.8946381
-# rh       0.8946381 1.0000000
+# humidity 1.0000000 0.8962506
+# rh       0.8962506 1.0000000
 
 cor(weather.cors[complete.cases(weather.cors), .(wind.speed.mean/10, ws)])
 #           V1        ws
-#.V1 1.0000000 0.7884483
-# ws 0.7884483 1.0000000
+# V1 1.0000000 0.7881784
+# ws 0.7881784 1.0000000
 # Usable or not?
 # What's the harm in using it and what's the harm in not using it?
 
@@ -72,6 +228,7 @@ weather.08.08.01[humidity < 20,  'humidity'] <- NA
 weather.08.08.01[humidity > 100, 'humidity'] <- NA
 isd.filled[rh < 20,  'rh'] <- NA
 isd.filled[rh > 100, 'rh'] <- NA
+# NOTE Setting these NAs to 20 or 100 is not necessarily the right thing to do
 
 plot(density(weather.cors[complete.cases(weather.cors), wind.speed.mean/10]), col='blue', ylim=c(0, 0.2))
 lines(density(weather.cors[complete.cases(weather.cors), ws]), col='green')
@@ -93,294 +250,495 @@ boxplot(weather.08.08.01[, pressure], na.rm = TRUE)
 # Restrict to 950 to 1055
 weather.08.08.01[pressure < 950,  'pressure'] <- NA
 weather.08.08.01[pressure > 1055, 'pressure'] <- NA
+# NOTE Setting these NAs to 950 or 1055 is not necessarily the right thing to do
 
 
 ######################################################################################################################################################
-# 2. Remove known historical inaccuracies
-#    https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html
+# 3. Remove long runs of consecutively equal values
+#    TODO Generalise to find anomolously low (but non-zero) variance observations over varying window sizes
 
 
-# rainfall and sunny measurements are known to be very problematic
-# Not using for now
-# Better not have -ve rainfall
-#weather.08.08.01 <-  weather.08.08.01[rainfall >= 0]
+get_consec_run_lengths <- function(df, varcol, tscol, sd.factor=3) {
+  b <- rle(df[, get(varcol)])
+  lengths.sd <- sd(b$lengths) * sd.factor
+  cat(paste("sd threshold: ", round(lengths.sd, 2), "\n\n"))
+  flush.console()
 
-# Low humidity problem from 2015-11-24 08:30:00 to 2015-11-27 13:00:00 - all 3 or less (very influential)
-#weather.08.08.01[humidity < 20, 'humidity'] <- NA # 20 here is a bit arbitrary but agrees with ISD Cam data
+  weather.rle <- data.table(value = b$values, runlength = b$lengths)
+  print(summary(weather.rle))
+  cat("\n")
+  flush.console()
 
-# Exclude (individually)
-#weather.08.08.01[sunny==1 & ds < sunrise]
-#weather.08.08.01[sunny==1 & ds > sunset]
+  weather.rle$end   <- cumsum(weather.rle$runlength)
+  weather.rle$start <- weather.rle$end - weather.rle$runlength + 1
+  weather.rle$starttime <- df[weather.rle$start, get(tscol)]
+  weather.rle$endtime   <- df[weather.rle$end, get(tscol)]
+  print(weather.rle[runlength > lengths.sd,][order(runlength), .(value, runlength, start, end, starttime, endtime)])
+  cat("\n")
+  flush.console()
 
-#weather.08.08.01 <- weather.08.08.01[!(sunny==1 & ds < sunrise)]
-#weather.08.08.01 <- weather.08.08.01[!(sunny==1 & ds > sunset)]
-#dim(weather.08.08.01)
+  x <- weather.rle[runlength > lengths.sd,][order(runlength), .(end, start)]
 
-#weather.08.08.01 <- weather.08.08.01[, !c("rainfall", "sunshine")]
+  return(sapply(1:nrow(x), function(i, x) { seq(x[i]$start, x[i]$end) }, x=x))
+}
 
-# Find max UK and Cambridge recorded wind speeds?
-#   Remove anything greater than 350
-#   Based on ISD Cam data and boxplot
-#weather.08.08.01 <- weather.08.08.01[wind.speed.max <= 600]
-#weather.08.08.01 <- weather.08.08.01[wind.speed.mean <= 600]
-#weather.08.08.01[wind.speed.max >= 350, 'wind.speed.max'] <- NA
-#weather.08.08.01[wind.speed.mean >= 350, 'wind.speed.mean'] <- NA
+# Only removing the most extreme outliers
+isd.temp.consecs <- get_consec_run_lengths(isd.filled, 'temp', 'time', 5) # No action
+isd.rh.consecs   <- get_consec_run_lengths(isd.filled, 'rh',   'time', 5) # No action
+isd.ws.consecs   <- get_consec_run_lengths(isd.filled, 'ws',   'time', 5) # No action
+isd.wd.consecs   <- get_consec_run_lengths(isd.filled, 'wd',   'time', 5) # No action
+isd.dp.consecs   <- get_consec_run_lengths(isd.filled, 'dew_point', 'time', 5) # No action
 
-# Remove unusual wind bearings fix
-# Don't remove - replace with NAs?!
-#weather.08.08.01 <- weather.08.08.01[wind.bearing.mean %in% seq(0, 360, 45), 'wind.bearing.mean'] <- NA
+weather.dp.consecs <- get_consec_run_lengths(weather.08.08.01, 'dew.point', 'ds', 5) # No action
+weather.pr.consecs <- get_consec_run_lengths(weather.08.08.01, 'pressure',  'ds', 5) # No action
+weather.ws.consecs <- get_consec_run_lengths(weather.08.08.01, 'wind.speed.mean',   'ds', 5) # No action
 
-# Unrealistic low temperature fix
-#weather.08.08.01 <- weather.08.08.01[temperature != -400, ]
+weather.wd.consecs <- get_consec_run_lengths(weather.08.08.01, 'wind.bearing.mean', 'ds', 12)
+weather.08.08.01[unlist(weather.wd.consecs), 'wind.bearing.mean'] <- NA
 
-# Remove unusual secs values
-weather.08.08.01 <- weather.08.08.01[secs %in% seq(0, 86400, 1800), ]
+weather.rh.consecs <- get_consec_run_lengths(weather.08.08.01, 'humidity',  'ds', 50)
+# max run lengths occur in winter months, all have max 100 value, none since 2015
+weather.08.08.01[unlist(weather.rh.consecs), 'humidity'] <- NA
 
-# On 12th August 2008, rainfall was not recorded, despite heavy rain falling over Cambridge in the morning.
-#weather.08.08.01 <- weather.08.08.01[ds != '2008-08-12', ]
-
-# From 19th August 2008 to 27th August 2008 inclusive, rainfall was not recorded
-#weather.08.08.01 <- weather.08.08.01[ds < '2008-08-19' | ds > '2008-08-27', ]
-
-# From 3rd September 2008 to 4th September 2008 at about 1pm, rainfall was again not recorded due to a blocked sensor
-#weather.08.08.01 <- weather.08.08.01[ds != '2008-09-03' & ds != '2008-09-04', ]
-
-# From 25th October 2008 to 4th November 2008, rainfall was again not correctly recorded due to a partially blocked sensor. 
-# Some rainfall was recorded, but the amounts recorded are far too small to be correct.
-#weather.08.08.01 <- weather.08.08.01[ds < '2008-10-25' | ds > '2008-11-04', ]
-
-# On 3rd April 2009 the Sunshine and Humidity sensors became stuck. Readings for Temperature and Humidity until 17:30 are known to be wrong
-weather.08.08.01[ds >= '2009-04-03 00:00' & ds < '2009-04-03 17:30', 'temperature'] <- NA
-weather.08.08.01[ds >= '2009-04-03 00:00' & ds < '2009-04-03 17:30', 'humidity'] <- NA
-
-# The Sunshine sensor appears to have become a daylight sensor - the threshold for determining 'Sunny' has changed, possibly 
-# from 3rd April when it was first noticed that it had become stuck.
-
-# Over the Easter weekend of 10th April 2009 to 13th April 2009, the rainfall was not recorded (blocked sensor again). 
-# It was unblocked on the Tuesday once we could gain access.
-#weather.08.08.01 <- weather.08.08.01[ds < '2009-04-10' | ds > '2009-04-13', ]
-
-# Between 6th and 28th February, the rainfall sensor has not been recording any rainfall, due to water damage (!) to one of the cables.
-#weather.08.08.01 <- weather.08.08.01[ds < '2010-02-06' | ds > '2010-02-28', ]
-
-# No results were recorded for 14th August 2010, and there was an interruption on 16th August 2010 due to a power failure
-weather.08.08.01[ds >= '2010-08-14 00:00' & ds < '2010-08-14 21:00', ]
-# Insert missing NAs further below
-weather.08.08.01[ds >= '2010-08-16 00:00' & ds < '2010-08-16 23:30', ]
-# temperature may be stuck between 2010-08-16 00:30:00 and 2010-08-16 06:30:00
-# otherwise looks OK - No changes
-
-# A blocked rain sensor on 23rd August 2010 may have given high readings for rainfall on that day.
-#weather.08.08.01 <- weather.08.08.01[ds != '2010-08-23', ]
-
-# A blocked rain sensor on 26rd February 2011 gave extreme readings for rainfall on that day of >170mm. A few mm would be a more realistic amount.
-#weather.08.08.01 <- weather.08.08.01[ds != '2011-02-26', ]
-
-# A blocked rain sensor from 19th August 2011 to 23rd August 2011 gave gave extreme readings for rainfall whenever it rained. 
-# It really isn't clear why a blocked sensor registers an excess of rainfall, rather than just none. Perhaps 10mm for 19th, 
-# and 4mm up to 1pm on the 23rd would be a better estimate.
-#weather.08.08.01 <- weather.08.08.01[ds < '2011-08-19' | ds > '2011-08-23', ]
-
-# The rain sensor failed completely on 6th September. We will endeavour to find a replacement as soon as possible.
-
-# On 30 October 2011, the data logging system experienced a failure at 1:00 AM. No data was recorded until 11:28 AM on 31 October 2011. 
-# We will investigate the issues that led to the interruption. A temporary fix was found for the rain sensor, but until replaced the 
-# recorded precipitation data should not be trusted.
-weather.08.08.01[ds >= '2011-10-30 01:00' & ds < '2011-10-31 11:30', ]
-# Insert missing NAs further below
-
-# On Tuesday 10 January 2012, no data has been recorded between 8:30 AM and 3:30 PM. This was due to a scheduled power outage in the 
-# Computer Laboratory building, followed by some issues on cold-starting the weather logging system.
-weather.08.08.01[ds >= '2012-01-10 08:30' & ds < '2012-01-10 15:30', ]
-# Insert missing NAs further below
-
-# On 30 January 2012, a planned interruption occured between 4:30 PM and 6:30 PM. On this occasion, we have updated our logging software to 
-# process data from the new precipitation sensor (Thies Clima). As a result of a data processing error, some precipitation readings later 
-# that day and early morning on 31 January are negative. A fix is in place as of 31 Jan 2012, 4:30 PM.
-#weather.08.08.01 <- weather.08.08.01[ds < '2012-01-30' | ds > '2012-01-31', ]
-# 3 readings which look reasonable - no changes
-
-# On 20 August 2012, a cottonwood seed stuck in the sensor area (protective caps) and moved around by the wind caused erroneous precipitation readings before 2:26 PM.
-#weather.08.08.01 <- weather.08.08.01[ds != '2012-08-20', ]
-
-# On the 28th January 2015 around 11:00 AM, the humidity sensor connection became intermittant due to corrosion. 
-# Humidity and Dew Point readings were unreliable and occasionally erratic until the issue was resolved on the 
-# 2nd February 2015 at 6:00PM
-weather.08.08.01[ds >= '2015-01-28 11:00' & ds < '2015-02-02 18:00', 'humidity'] <- NA
-weather.08.08.01[ds >= '2015-01-28 11:00' & ds < '2015-02-02 18:00', 'dew.point'] <- NA
+weather.temp.consecs <- get_consec_run_lengths(weather.08.08.01, 'temperature', 'ds', 6)
+# So far (30/03/21) the worst offender here is temperature which was
+# stuck at the same value for 36 days!
+# And not marked in the known inaccuracies :-(
+# 2015-11-30 11:30:00 2016-01-08 15:00:00
+weather.08.08.01[ds > '2015-11-30 11:30:00' & ds < '2016-01-08 15:00:00', 'temperature'] <- NA
 
 
 ######################################################################################################################################################
-# 3. Remove Computer Lab outliers using Cook's distance
+# 4. Check for measurement "spikes"
+#    Where spikes are sudden large increasing/decreasing observations
+#    followed by approximate return to previous value
+#    So far, spikes are limited to lengths of 1 observation
+
+
+get_large_spikes  <- function(df, varcol, tscol, sd.factor=3) {
+  df$row.no <- 1:nrow(df)
+  diffs <- df[, .(time=get(tscol),
+                  row.no,
+                  value=get(varcol),
+                  diff.before=get(varcol) - shift(get(varcol)),
+                  diff.after=get(varcol) - shift(get(varcol), type='lead'))]
+  print(summary(diffs[, .(value, diff.before, diff.after)]))
+  cat("\n")
+  flush.console()
+
+  diff.before.sd <- sd.factor * sd(diffs$diff.before, na.rm=TRUE)
+  diff.after.sd  <- sd.factor * sd(diffs$diff.after,  na.rm=TRUE)
+  cat(paste("sd before threshold: ", round(diff.before.sd, 2), "\n"))
+  cat(paste("sd after threshold:  ", round(diff.after.sd,  2), "\n\n"))
+  flush.console()
+
+  print(diffs[abs(diff.before) > diff.before.sd &
+              abs(diff.after)  > diff.after.sd  &
+              ((diff.before > 0 & diff.after > 0) |
+               (diff.before < 0 & diff.after < 0)),])
+  flush.console()
+
+  return(diffs[abs(diff.before) > diff.before.sd &
+               abs(diff.after)  > diff.after.sd  &
+               ((diff.before > 0 & diff.after > 0) |
+                (diff.before < 0 & diff.after < 0)), row.no])
+}
+
+weather.temp.spikes <- get_large_spikes(weather.08.08.01, 'temperature', 'ds', 5)
+weather.rh.spikes   <- get_large_spikes(weather.08.08.01, 'humidity',    'ds', 5)
+# 30 sporadic humidity spikes from 2015-11-29 20:00:00 to 2016-01-08 15:00:00
+# The inaccuracies.html file lists an earlier humidity sensor problem (low measurements)
+weather.pres.spikes <- get_large_spikes(weather.08.08.01, 'pressure',    'ds', 5)
+weather.dp.spikes   <- get_large_spikes(weather.08.08.01, 'dew.point',   'ds', 5)
+weather.ws.spikes   <- get_large_spikes(weather.08.08.01, 'wind.speed.mean', 'ds', 5)
+weather.08.08.01[weather.temp.spikes, 'temperature'] <- NA
+weather.08.08.01[weather.rh.spikes,   'humidity'] <- NA
+weather.08.08.01[weather.pres.spikes, 'pressure'] <- NA
+weather.08.08.01[weather.dp.spikes,   'dew.point'] <- NA
+weather.08.08.01[weather.ws.spikes,   'wind.speed.mean'] <- NA
+
+isd.temp.spikes <- get_large_spikes(isd.filled, 'temp', 'time', 5)
+isd.rh.spikes   <- get_large_spikes(isd.filled, 'rh',   'time', 3) # No action
+isd.dp.spikes   <- get_large_spikes(isd.filled, 'dew_point', 'time', 5)
+isd.ws.spikes   <- get_large_spikes(isd.filled, 'ws', 'time', 5)
+isd.filled[isd.temp.spikes, 'temp'] <- NA
+isd.filled[isd.dp.spikes,   'dp'] <- NA
+isd.filled[isd.ws.spikes,   'ws'] <- NA
+
+
+######################################################################################################################################################
+# 5. Remove Computer Lab and Airport outliers using Cook's distance
 #    See http://r-statistics.co/Outlier-Treatment-With-R.html
-#    10*mean(cooksd) is a fairly arbitrary threshold
 #    TODO Use more principled approach to outlier removal
 #         Possibly seasonal - bin cooksd values into days 48 * 12 = 576 big bins :-)
 #                             calculate 99th or higher centile
 #                             build loess model
-#    TODO Repeat with lm() model and Cook's distance calculation with isd.filled data
 
 
-weather.08.08.01[,year:=as.numeric(strftime(ds, format = "%Y"))]
-weather.08.08.01[, doy:=as.numeric(strftime(ds, format = "%j"))]
-mod <- lm(secs+doy+year ~ temperature+humidity+dew.point+pressure+wind.speed.mean+wind.bearing.mean, data=weather.08.08.01)
-summary(mod)
+get_cooks_dist_outliers <- function(df, tscol, formula, cd.factor=3) {
+  df[, year:=as.numeric(strftime(get(tscol), format = "%Y"))]
+  df[,  doy:=as.numeric(strftime(get(tscol), format = "%j"))]
+  df[,  HMS:=strftime(get(tscol), format = "%H:%M:%S")]
+  df[, secs:=as.numeric(as.difftime(HMS))]
 
-cooksd <- cooks.distance(mod)
-plot(cooksd, main="Influential Obs by Cooks distance") # slow
-text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd > 20*mean(cooksd, na.rm=T), names(cooksd), ""), col="red")  # add labels
+  mod <- lm(formula, df)
+  print(summary(mod))
 
-abline(h = 10*mean(cooksd, na.rm=T), col="red")  # add cutoff line
+  cooksd <- cooks.distance(mod)
+  cat("Cook's distance:\n")
+  print(summary(cooksd))
 
-table(cooksd > 10*mean(cooksd, na.rm=T))
+  plot(cooksd, main="Influential Obs by Cooks distance") # slow
+  text(x=1:length(cooksd)+1,
+       y=cooksd,
+       labels=ifelse(cooksd > 2*cd.factor**mean(cooksd, na.rm=T), names(cooksd), ""),
+       col="red")  # add labels
+  abline(h = cd.factor*mean(cooksd, na.rm=T), col="red")  # add cutoff line
 
-influential <- as.numeric(names(cooksd)[(cooksd > 10*mean(cooksd, na.rm=T))])  # influential row numbers
-head(weather.08.08.01[influential, ])
-tail(weather.08.08.01[influential, ])
+  cat("\nInfluential:")
+  print(table(cooksd > cd.factor*mean(cooksd, na.rm=T)))
 
-summary(weather.08.08.01[influential, .(temperature, humidity, dew.point, pressure, wind.speed.mean, wind.bearing.mean, wind.speed.max)])
-summary(weather.08.08.01[-influential, .(temperature, humidity, dew.point, pressure, wind.speed.mean, wind.bearing.mean, wind.speed.max)])
-# Influential points are mostly low temperature and low dew_point
+  influential <- as.numeric(names(cooksd)[(cooksd > cd.factor*mean(cooksd, na.rm=T))])  # influential row numbers
 
-weather.08.08.01 <- weather.08.08.01[-influential,]
+  df$secs <- NULL
+  df$year <- NULL
+  df$HMS <- NULL
+  df$doy <- NULL
 
-weather.08.08.01$wind.speed.max <- NULL
-weather.08.08.01$secs <- NULL
-weather.08.08.01$year <- NULL
-weather.08.08.01$doy <- NULL
+  cat("\nOnly influential:\n")
+  print(summary(df[ influential, ]))
+  cat("\nNo influential:\n")
+  print(summary(df[-influential, ]))
 
-
-######################################################################################################################################################
-# 4. Remove long runs of consecutively equal values
-#    What threshold to use for number of consecutive values?
-#    So far (30/03/21) the worst offender here is temperature which was
-#    stuck at the same value for 36 days!
-#    And not marked in the known inaccuracies :-(
-#    TODO Establish better exclusion threshold values (sd.factor) for weather.filled
-
-
-get_consec_run_lengths <- function(data, column, sd.factor=3, n=6) {
-  b <- rle(data[, ..column])
-  lengths.sd = sd(b$lengths)
-  weather.rle <- data.frame(number = b$values, lengths = b$lengths)
-  weather.rle$end <- cumsum(weather.rle$lengths)
-  weather.rle$start <- weather.rle$end - weather.rle$lengths + 1
-  weather.rle[order(weather.rle$lengths), ]
-  print(tail(weather.rle[order(weather.rle$lengths), ], n))
-  flush.console()
-  cat("\n")
-  # print(data[unlist(weather.rle[weather.rle$lengths==max(weather.rle$lengths), c('start', 'end')]), 'ds'])
-  print(data[unlist(weather.rle[weather.rle$lengths >= sd.factor * lengths.sd, c('start', 'end')]), 'ds'])
-  flush.console()
+  return(influential)
 }
 
-get_consec_run_lengths(weather.08.08.01, 'humidity')
-get_consec_run_lengths(weather.08.08.01, 'dew.point')
-get_consec_run_lengths(weather.08.08.01, 'pressure')
-get_consec_run_lengths(weather.08.08.01, 'wind.speed.mean')
-get_consec_run_lengths(weather.08.08.01, 'wind.bearing.mean')
-get_consec_run_lengths(weather.08.08.01, 'temperature')
-# [1] 2015-11-30 11:30:00 2016-01-08 15:00:00
-weather.08.08.01 <- weather.08.08.01[ds < '2015-11-30 11:30:00' | ds > '2016-01-08 15:00:00', ]
+weather.form <- 'secs+doy+year ~ temperature+humidity+dew.point+pressure+wind.speed.mean+wind.bearing.mean'
+weather.cooksd.influential <- get_cooks_dist_outliers(weather.08.08.01, 'ds', weather.form, 15)
+weather.08.08.01[weather.cooksd.influential, c('temperature', 'humidity', 'dew.point', 'pressure', 'wind.speed.mean', 'wind.bearing.mean')] <- NA
 
-
-
-######################################################################################################################################################
-# 5. Check for measurement "spikes"
-#    Where spikes are sudden large increasing/decreasing observations
-#    followed by approximate return to previous value
-#    So far, spikes are limited to lengths of 1 observation
-#    TODO Establish exclusion threshold (sd.factor) values for weather.filled
-
-
-get_large_spikes  <- function(data, varcol, tscol, sd.factor=3) {
-  diffs <- data[, .(get(tscol), get(varcol), diff.before=get(varcol) - shift(get(varcol)), diff.after=get(varcol) - shift(get(varcol), type='lead'))]
-  print(summary(diffs))
-  flush.console()
-  cat("\n")
-  diff.before.sd <- sd.factor * sd(diffs$diff.before, na.rm=TRUE)
-  diff.after.sd  <- sd.factor * sd(diffs$diff.after,  na.rm=TRUE)
-  diffs[abs(diff.before) > diff.before.sd & abs(diff.after) > diff.after.sd,]
-}
-
-get_large_spikes(weather.filled, 'temperature', 'ds')
-get_large_spikes(weather.filled, 'humidity',    'ds')
-get_large_spikes(weather.filled, 'pressure',    'ds')
-get_large_spikes(weather.filled, 'dew.point',   'ds')
-get_large_spikes(weather.filled, 'wind.speed.mean', 'ds')
-
-get_large_spikes(isd.filled, 'temp', 'time')
-get_large_spikes(isd.filled, 'rh',   'time')
-get_large_spikes(isd.filled, 'dew_point', 'time')
-get_large_spikes(isd.filled, 'ws', 'time')
+isd.filled[, time:=as.POSIXct(time, tz="GMT")]
+isd.form <- 'secs+doy+year ~ temp+rh+dew_point+ws+wd'
+isd.cooksd.influential <- get_cooks_dist_outliers(isd.filled, 'time', isd.form, 15)
+isd.filled[isd.cooksd.influential, c('temp', 'wd', 'ws', 'dew_point', 'rh')] <- NA
 
 
 ######################################################################################################################################################
-# 6. Fill Computer Lab (weather.isd) NAs with Cambridge Airport (isd.filled) values
+# 6. Use Cambridge Airport (weather.isd) to find Computer Lab (weather.08.08.01) outliers
+#    Potentially exclude 1 or 2 thousand more measurements
 
 
 isd.renamed <- isd.filled[, .(ds=time, temperature=temp*10, humidity=rh, dew.point=dew_point, pressure=NA, wind.speed.mean=ws*10, wind.bearing.mean=wd)]
 weather.isd <- merge(weather.08.08.01, isd.renamed, by='ds', all.x=TRUE, all.y=TRUE)
-weather.filled <- weather.isd[, .(ds,
-                                  temperature=ifelse(is.na(temperature.x) & !is.na(temperature.y), temperature.y, temperature.x),
-                                  humidity=ifelse(is.na(humidity.x) & !is.na(humidity.y), humidity.y, humidity.x),
-                                  pressure=pressure.x,
-                                  dew.point=ifelse(is.na(dew.point.x) & !is.na(dew.point.y), dew.point.y, dew.point.x),
-                                  wind.speed.mean=ifelse(is.na(wind.speed.mean.x) & !is.na(wind.speed.mean.y), wind.speed.mean.y, wind.speed.mean.x),
-                                  wind.bearing.mean=ifelse(is.na(wind.bearing.mean.x) & !is.na(wind.bearing.mean.y), wind.bearing.mean.y, wind.bearing.mean.x))]
+
+get_cl_outliers_using_isd <- function(df, varcol, tscol, sd.factor=3) {
+  varcol.x <- paste0(varcol, '.x')
+  varcol.y <- paste0(varcol, '.y')
+  varcol.sd <- sd.factor * sd(df[, .(get(varcol.x) - get(varcol.y))][!is.na(V1), V1], na.rm=TRUE)
+  cat(paste("sd threshold: ", round(varcol.sd, 2), "\n\n"))
+  flush.console()
+
+  print(summary(df[, .(diff=get(varcol.x) - get(varcol.y))][!is.na(diff)]))
+  cat("\n")
+  flush.console()
+
+  df$row.no <- as.numeric(rownames(df))
+  print(df[, .(get(tscol),
+               get(varcol.x),
+               get(varcol.y),
+               get(varcol.x) - get(varcol.y),
+               row.no)][!is.na(V4) & abs(V4) > varcol.sd, .(row.no,
+                                                            time=V1,
+                                                            varcol.x=V2,
+                                                            varcol.y=V3,
+                                                            diff=V4)])
+  flush.console()
+
+  return(df[, .(get(varcol.x) - get(varcol.y),
+                row.no)][!is.na(V1) & abs(V1) > varcol.sd, row.no])
+}
+
+cl.isd.temp.outliers <- get_cl_outliers_using_isd(weather.isd, 'temperature',   'ds', 5)
+cl.isd.rh.outliers <- get_cl_outliers_using_isd(weather.isd, 'humidity',        'ds', 5)
+cl.isd.dp.outliers <- get_cl_outliers_using_isd(weather.isd, 'dew.point',       'ds', 4)
+cl.isd.ws.outliers <- get_cl_outliers_using_isd(weather.isd, 'wind.speed.mean', 'ds', 5)
+weather.isd[cl.isd.temp.outliers, 'temperature'] <- NA
+weather.isd[cl.isd.rh.outliers, 'humidity']  <- NA
+weather.isd[cl.isd.dp.outliers, 'dew.point'] <- NA
+weather.isd[cl.isd.ws.outliers, 'wind.speed.mean'] <- NA
+
+
+######################################################################################################################################################
+# 7. Fill in NAs by simple linear interpolation
+#    Limit to 6 hours or 12 consecutive observations
+
+weather.isd.orig <- weather.isd
+weather.isd$temperature.x <- as.numeric(weather.isd$temperature.x)
+weather.isd$humidity.x  <- as.numeric(weather.isd$humidity.x)
+weather.isd$dew.point.x <- as.numeric(weather.isd$dew.point.x)
+weather.isd$pressure.x  <- as.numeric(weather.isd$pressure.x)
+weather.isd$wind.speed.mean.x   <- as.numeric(weather.isd$wind.speed.mean.x)
+weather.isd$wind.bearing.mean.x <- as.numeric(weather.isd$wind.bearing.mean.x)
+
+interpolate_nas <- function(df, cols) {
+  df$row <- 1:nrow(df)
+
+  for (col in cols) {
+    print(col)
+    df[, rle := rleid(get(col))][,missing := max(.N +  1 , 2), by=rle]
+    yy  <- df[missing <= 13, ..col][[1]]
+    xx  <- df[missing <= 13, row]
+    nas <- df[missing <= 13 & is.na(get(col)), row]
+    df[nas, col] <- approx(xx, yy, xout=nas)$y
+  }
+
+  summary(df)
+  df
+  df[nas,]
+  df$row <- NULL
+  df$rle <- NULL
+  df$missing <- NULL
+
+  return(df)
+}
+
+cols.1 <- c("temperature.x", "humidity.x", "dew.point.x", "pressure.x", "wind.speed.mean.x", "wind.bearing.mean.x")
+weather.isd.interp.1 <- interpolate_nas(weather.isd, cols.1)
+
+cols.2 <- c("temperature.y", "humidity.y", "dew.point.y", "wind.speed.mean.y", "wind.bearing.mean.y")
+weather.isd.interp.2 <- interpolate_nas(weather.isd.interp.1, cols.2)
+
+
+######################################################################################################################################################
+# 8. Fill Computer Lab (weather.isd) NAs with Cambridge Airport (isd.filled) values
+
+
+weather.filled <- weather.isd.interp.2[,
+                    .(ds,
+                      temperature=ifelse(is.na(temperature.x) & !is.na(temperature.y), temperature.y, temperature.x),
+                      humidity=ifelse(is.na(humidity.x) & !is.na(humidity.y), humidity.y, humidity.x),
+                      pressure=pressure.x,
+                      dew.point=ifelse(is.na(dew.point.x) & !is.na(dew.point.y), dew.point.y, dew.point.x),
+                      wind.speed.mean=ifelse(is.na(wind.speed.mean.x) & !is.na(wind.speed.mean.y), wind.speed.mean.y, wind.speed.mean.x),
+                      wind.bearing.mean=ifelse(is.na(wind.bearing.mean.x) & !is.na(wind.bearing.mean.y), wind.bearing.mean.y, wind.bearing.mean.x))]
 summary(weather.filled) # lot of pressure NAs :-(
 summary(weather.filled[is.na(wind.speed.mean)])
 summary(weather.filled[is.na(wind.bearing.mean)])
 summary(weather.filled[is.na(temperature)])
 
+cor(weather.isd.interp.2[complete.cases(weather.isd.interp.2[, .(temperature.x, temperature.y)]), .(temperature.x, temperature.y)])
+#               temperature.x temperature.y
+# temperature.x     1.0000000     0.9783566
+# temperature.y     0.9783566     1.0000000
+cor(weather.isd.interp.2[complete.cases(weather.isd.interp.2[, .(dew.point.x, dew.point.y)]), .(dew.point.x, dew.point.y)])
+#             dew.point.x dew.point.y
+# dew.point.x   1.0000000   0.9500148
+# dew.point.y   0.9500148   1.0000000
+# Increase over 0.9117574
+cor(weather.isd.interp.2[complete.cases(weather.isd.interp.2[, .(humidity.x, humidity.y)]), .(humidity.x, humidity.y)])
+#            humidity.x humidity.y
+# humidity.x  1.0000000  0.9064502
+# humidity.y  0.9064502  1.0000000
+cor(weather.isd.interp.2[complete.cases(weather.isd.interp.2[, .(wind.speed.mean.x, wind.speed.mean.y)]), .(wind.speed.mean.x, wind.speed.mean.y)])
+#                   wind.speed.mean.x wind.speed.mean.y
+# wind.speed.mean.x         1.0000000         0.8689842
+# wind.speed.mean.y         0.8689842         1.0000000
+# Increase over 0.7881784
+cor(weather.isd.interp.2[complete.cases(weather.isd.interp.2[, .(wind.bearing.mean.x, wind.bearing.mean.y)]), .(wind.bearing.mean.x, wind.bearing.mean.y)])
+#                     wind.bearing.mean.x wind.bearing.mean.y
+# wind.bearing.mean.x           1.0000000           0.6827114
+# wind.bearing.mean.y           0.6827114           1.0000000
+
 
 ######################################################################################################################################################
-# 7. Use Cambridge Airport (weather.isd) to find Computer Lab (weather.08.08.01) outliers
-#    Potentially exclude 1 or 2 thousand more measurements
-#    TODO Establish exclusion threshold values (sd.factor) for weather.filled
+# 9. Fill in remaining missing values with historical averages
 
 
-get_cl_outliers_using_isd <- function(data, varcol, tscol, sd.factor=3) {
-  varcol.x <- paste0(varcol, '.x')
-  varcol.y <- paste0(varcol, '.y')
-  varcol.sd <- sd.factor * sd(data[, .(get(varcol.x) - get(varcol.y))][!is.na(V1), V1], na.rm=TRUE)
-  cat(paste("sd threshold: ", round(varcol.sd, 2), "\n\n"))
+get_historical_average <- function(df, varcol, tscol, yearval=2019) {
+  df[, year:=as.numeric(strftime(get(tscol), format = "%Y"))]
+  df[,  doy:=as.numeric(strftime(get(tscol), format = "%j"))]
+  df[,  HMS:=strftime(get(tscol), format = "%H:%M:%S")]
+  df[, secs:=as.numeric(as.difftime(HMS))]
+
+  df.not.year <- unique(df[year != yearval | doy != 366, mean.var:=mean(get(varcol), na.rm=TRUE), by=.(doy, secs)][, .(doy, secs, mean.var)])
+  df.not.year <- df.not.year[doy != 366 & !is.na(mean.var),]
+
+  df.year <- df[year == yearval, .(doy, secs, get(varcol))]
+  df.year <- df.year[doy != 366 & !is.na(V3),]
+
+  setkey(df.not.year, doy, secs)
+  setkey(df.year,     doy, secs)
+
+  rmse <- function(obs, pred) sqrt(mean((obs - pred)^2, na.rm=TRUE))
+
+  print(cor(df.not.year[df.year, .(mean.var, V3)]))
   flush.console()
 
-  print(summary(data[, .(get(varcol.x) - get(varcol.y))][!is.na(V1)]))
-  cat("\n")
+  # rmse values ignore missing values so will be overestimates
+  cat(paste0("\nrmse (historical): ",
+             round(rmse(df.not.year[df.year, mean.var], df.not.year[df.year, V3]), 2),
+             "\n"))
+  mean.var <- mean(df[, get(varcol)], na.rm=TRUE)
+  cat(paste0("rmse (mean):\t   ",
+             round(rmse(df[!is.na(get(varcol)), get(varcol)], jitter(rep(mean.var, nrow(df[!is.na(get(varcol)),])))), 2),
+             "\n"))
   flush.console()
 
-  data$row.no <- rownames(data)
-  print(data[, .(get(tscol),
-                 get(varcol.x),
-                 get(varcol.y),
-                 get(varcol.x) - get(varcol.y),
-                 row.no)][!is.na(V4) & abs(V4) > varcol.sd, .(time=V1,
-                                                              diff=V4,
-                                                              varcol.x=V2,
-                                                              varcol.y=V3,
-                                                              row.no)])
-  flush.console()
+  historical <- df[, mean.var:=mean(get(varcol), na.rm=TRUE), by=.(doy, secs)][, .(doy, secs, mean.var)]
+  historical <- historical[!is.na(mean.var),]
+  setkey(historical, doy, secs)
 
-  return(data[, .(get(varcol.x) - get(varcol.y),
-                  row.no)][!is.na(V1) & abs(V1) > varcol.sd, row.no])
+  return(historical)
 }
 
-get_cl_outliers_using_isd(weather.isd, 'temperature', 'ds', 5)
-get_cl_outliers_using_isd(weather.isd, 'humidity',    'ds', 5)
-get_cl_outliers_using_isd(weather.isd, 'dew.point',   'ds', 4)
-get_cl_outliers_using_isd(weather.isd, 'wind.speed.mean', 'ds', 5)
+historical.temp <- get_historical_average(weather.filled, 'temperature', 'ds')
+#           mean.var        V3
+# mean.var 1.0000000 0.8801195
+# V3       0.8801195 1.0000000
+#
+# rmse (historical): 30.79
+# rmse (mean):	     65.25
+historical.rh <- get_historical_average(weather.filled, 'humidity', 'ds')
+#           mean.var        V3
+# mean.var 1.0000000 0.7671816
+# V3       0.7671816 1.0000000
+#
+# rmse (historical): 11.91
+# rmse (mean):	     17.28
+historical.dp <- get_historical_average(weather.filled, 'dew.point', 'ds')
+#           mean.var        V3
+# mean.var 1.0000000 0.7608672
+# V3       0.7608672 1.0000000
+#
+# rmse (historical): 33.03
+# rmse (mean):	     51.7
+historical.pres <- get_historical_average(weather.filled, 'pressure', 'ds')
+#           mean.var        V3
+# mean.var 1.0000000 0.5405856
+# V3       0.5405856 1.0000000
+#
+# rmse (historical): 12.1
+# rmse (mean):	     16.77
+historical.ws <- get_historical_average(weather.filled, 'wind.speed.mean', 'ds')
+#           mean.var        V3
+# mean.var 1.0000000 0.4838662
+# V3       0.4838662 1.0000000
+#
+# rmse (historical): 35.7
+# rmse (mean):	     40.31
+historical.wd <- get_historical_average(weather.filled, 'wind.bearing.mean', 'ds')
+#           mean.var        V3
+# mean.var 1.0000000 0.2966302
+# V3       0.2966302 1.0000000
+#
+# rmse (historical): 77.57
+# rmse (mean):	     83.31
+
+# Despite the low correlation values for some variables they are all better than raw mean values.
+# Historical values for pressure, wind.speed.mean and wind.bearing.mean give better results than
+# multiple imputation values below.  Not an ideal substition :-(
+summary(weather.filled)
+weather.filled[,  doy:=as.numeric(strftime(ds, format = "%j"))]
+weather.filled[,  HMS:=strftime(ds, format = "%H:%M:%S")]
+weather.filled[, secs:=as.numeric(as.difftime(HMS))]
+setkey(weather.filled, doy, secs)
+
+weather.filled[is.na(wind.speed.mean),   'wind.speed.mean']   <- unique(historical.ws[weather.filled[is.na(wind.speed.mean)],   .(ds, mean.var)])$mean.var
+weather.filled[is.na(wind.bearing.mean), 'wind.bearing.mean'] <- unique(historical.wd[weather.filled[is.na(wind.bearing.mean)], .(ds, mean.var)])$mean.var
+weather.filled[is.na(pressure), 'pressure'] <- unique(historical.pres[weather.filled[is.na(pressure)], .(ds, mean.var)])$mean.var
+weather.filled$doy <- NULL
+weather.filled$HMS <- NULL
+weather.filled$year <- NULL
+weather.filled$secs <- NULL
+weather.filled$mean.var <- NULL
+setkey(weather.filled, ds)
+summary(weather.filled)
+
 
 
 ######################################################################################################################################################
-# 8. Save data
+# 10. Multiple imputation for remaining temperature, humidity and dew.point NAs
+#     Using Hmisc library which FWIW is included in base R install
+#     I suspect imputation suffers when NAs co-occur across variables
+
+
+library(Hmisc)
+# Very slow - approx. 10 mins :-(
+impute_arg_tlin <- aregImpute(~ temperature + humidity + pressure + dew.point + wind.speed.mean + wind.bearing.mean,
+                              data=weather.filled, n.impute = 20, tlinear=FALSE)
+impute_arg_tlin
+# aregImpute(formula = ~temperature + humidity + pressure + dew.point +
+#     wind.speed.mean + wind.bearing.mean, data = weather.filled,
+#     n.impute = 20, tlinear = FALSE)
+#
+# n: 220799 	p: 6 	Imputations: 20  	nk: 3
+#
+# Number of NAs:
+#       temperature          humidity          pressure         dew.point
+#               899               736                 0               268
+#   wind.speed.mean wind.bearing.mean
+#                 0                 0
+#
+#                   type d.f.
+# temperature          s    2
+# humidity             s    2
+# pressure             s    2
+# dew.point            s    2
+# wind.speed.mean      s    2
+# wind.bearing.mean    s    2
+#
+# R-squares for Predicting Non-Missing Values for Each Variable
+# Using Last Imputations of Predictors
+# temperature    humidity   dew.point
+#       0.970       0.922       0.958
+
+summary(weather.filled)
+weather.filled[is.na(temperature), 'temperature'] <- rowMeans(impute_arg_tlin$imputed$temperature)
+weather.filled[is.na(humidity),    'humidity']    <- rowMeans(impute_arg_tlin$imputed$humidity)
+weather.filled[is.na(dew.point),   'dew.point']   <- rowMeans(impute_arg_tlin$imputed$dew.point)
+summary(weather.filled)
+
+
+# Adding imputed and historical values introduces a few large values which are
+# straight-forward to correct
+wf.temp.spikes <- get_large_spikes(weather.filled, 'temperature', 'ds', 6)
+wf.rh.spikes   <- get_large_spikes(weather.filled, 'humidity',    'ds', 6)
+wf.pres.spikes <- get_large_spikes(weather.filled, 'pressure',    'ds', 6)
+wf.dp.spikes   <- get_large_spikes(weather.filled, 'dew.point',   'ds', 6)
+wf.ws.spikes   <- get_large_spikes(weather.filled, 'wind.speed.mean', 'ds', 5) # No action
+
+weather.filled[wf.temp.spikes, 'temperature'] <- NA
+weather.filled[wf.rh.spikes,   'humidity']    <- NA
+weather.filled[wf.pres.spikes, 'pressure']    <- NA
+weather.filled[wf.dp.spikes,   'dew.point']   <- NA
+summary(weather.filled)
+
+cols.3 <- c("temperature", "humidity", "dew.point", "pressure")
+weather.filled.interp <- interpolate_nas(weather.filled, cols.3)
+summary(weather.filled.interp)
+
+
+######################################################################################################################################################
+# 11. Save data
 
 
 fnRDS <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".RData")
 fnCSV <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".csv")
 fnRData <- paste0("data/CambridgeTemperatureModel", format(Sys.time(), "%Y.%m.%d"), ".RData")
-saveRDS(weather.filled[, .(temperature, dew.point, humidity, pressure, wind.speed.mean, wind.bearing.mean, ds)], fnRDS)
-write.csv(weather.filled[, .(ds, y=temperature, humidity, dew.point, pressure, wind.speed.mean, wind.bearing.mean)], fnCSV, row.names=FALSE)
+
+saveRDS(weather.filled.interp[, .(temperature,
+                                  dew.point,
+                                  humidity,
+                                  pressure,
+                                  wind.speed.mean,
+                                  wind.bearing.mean,
+                                  ds)], fnRDS)
+write.csv(weather.filled.interp[, .(ds,
+                                    y=temperature,
+                                    humidity,
+                                    dew.point,
+                                    pressure,
+                                    wind.speed.mean,
+                                    wind.bearing.mean)], fnCSV, row.names=FALSE)
 save.image(fnRData)
 
