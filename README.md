@@ -90,15 +90,36 @@ Measurements are recorded every 30 minutes.
 ### Cleaning
 
 The data included start on 2008-08-01 when the weather station was moved to it's current
-[location](https://www.cl.cam.ac.uk/research/dtg/weather/map.html).  Unrealistically high wind speed (> 60),
-low humidity (< 25) and low temperature (< -20) values were removed.  The Digital Technology
-Group list [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) in the weather
-data.  All measurements for the entire day or days was removed for each of the listed inaccuracies.
-[Cook's distance](https://en.wikipedia.org/wiki/Cook%27s_distance)
-was used to remove the remaining influential observations but some problems may remain in the data, such as
-long series of repeated values.  The remaining measurements have no missing values.
+[location](https://www.cl.cam.ac.uk/research/dtg/weather/map.html).
 
-The following figure shows the cleaned temperature time series.
+Unfortunately, the data is quite noisy:
+
+ * The Digital Technology Group list
+   [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html)
+   in the weather data which were excluded.
+ * Unrealistically high and low values were removed.
+ * Long runs of consecutively equal values were removed.
+ * Sudden large increasing/decreasing observations were removed.
+ * [Cook's distance](https://en.wikipedia.org/wiki/Cook%27s_distance)
+   was used to remove influential observations.
+ * Cambridge Airport weather measurements from [ISD](https://www.ncdc.noaa.gov/isd)
+   were used to find additional outliers in the Computer Lab measurements.
+   * the above exclusions were also applied to the ISD data
+ * Limited (12 hours max) linear interpolation was used to fill missing observations.
+ * Where available Cambridge Airport ISD data was used to fill missing values.
+   * no pressure data for Cambridge Airport from ISD
+ * Historical averages were used to fill missing pressure, wind speed and bearing values.
+   * multiple imputation for these variables gave poor results
+ * Multiple imputation was used to replace missing temperature, humidity and dew point values.
+   * multiple imputation for these variables gave similar or better results to historical averages
+
+The most recent cleaned data have no missing values.
+Data older than 2021/04/22 have had less cleaning.
+Outlier exclusion has been fairly conservative.
+Some problems may remain in the data, such as short and/or long term sensor drift
+or periods of anomolously high variance.
+
+The following figure shows an older cleaned temperature time series.
 
 <img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/temperature.time.series.01.png" alt="Temperature time series" width="50%" height="50%"/>
 
@@ -109,6 +130,16 @@ The [ADF](https://en.wikipedia.org/wiki/Augmented_Dickey%E2%80%93Fuller_test) an
 file (described in the Files subsection below) implies the stationarity of this time
 series.
 
+
+### Cambridge Airport ISD data
+
+Cambridge Airport weather measurements from [ISD](https://www.ncdc.noaa.gov/isd)
+were used to find outliers in the Computer Laboratory measurements and to replace
+missing values.  The [stationaRy](https://github.com/rich-iannone/stationaRy)
+package was used to download the ISD data.  Unfortunately there are no pressure
+measurements.  Data cleaning and limited interpolation were applied to
+the Cambridge Airport data before being used to replace NAs in the Computer lab
+data.
 
 
 ### One step ahead baselines
@@ -121,6 +152,8 @@ The following table shows accuracy metrics for baseline nowcast methods:
 | Persistent temperature         | 6.26     | 4.13     | **9.49** |
 | Simple exponential smoothing   | 6.05     | 4.03     | 9.81     |
 | Holt exponential smoothing     | **5.62** | **3.94** | 10.25    |
+
+These results are from older partially cleaned observations.
 
 These metrics are calculated in the baselines file briefly
 described in the Files subsection.  Numbers in **bold** indicate
@@ -215,6 +248,8 @@ The accuracy results for one step ahead forecasts:
 | Logistic growth, automatic changepoints | 28.82    | 25.88    | 50.25    |
 | Logistic growth, 50 changepoints        | 28.66    | 25.80    | 50.13    |
 
+These results are from older partially cleaned observations.
+
 Using more changepoints showed little to no improvement.
 
 These results are substantially higher than most of the baseline one step
@@ -245,6 +280,8 @@ FWIW here are the training set accuracy metrics for one step ahead forecasts:
 | ------------------------------ | -------: | -------: | -------: |
 | TBATS                          | 5.7      | 3.8      | Inf      |
 
+These results are from older partially cleaned observations.
+
 These results are **not** comparable with the baseline methods which are
 calculated on a separate test data set.
 
@@ -262,7 +299,7 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
      * Both computer lab and [NOAA ISD](https://www.ncdc.noaa.gov/isd) Cambridge airport data
  * [2-clean.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/2-clean.R)
    * Remove known [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html) and other unrealistic measurements
-   * Use [NOAA ISD](https://www.ncdc.noaa.gov/isd) Cambridge airport data to replace missing values where possible
+   * Use [NOAA ISD](https://www.ncdc.noaa.gov/isd) Cambridge airport data, historical averages and multiple imputation to replace missing values
  * [3.01-eda.R](https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/3.01-eda.R)
      * Temperature time series plot and stationarity tests
      * This script will create a directory called figures if it doesn't already exist
@@ -289,12 +326,13 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
  * Add standard deviations to MSE, MAE and MAPE values
  * Further develop data cleaning
    * The Cook's distance based outlier removal would benefit from a seasonal component
-   * Establish exclusion criteria for large "spike" values
-   * Establish exclusion criteria for computer lab and airport data comparisons
    * Investigate missing airport pressure data
      * Consider alternatives to [stationaRy](https://github.com/rich-iannone/stationaRy) like [ropensci/isdparser](https://github.com/ropensci/isdparser)
      * [ropensci/riem](https://github.com/ropensci/riem) queries global ASOS data from [IEM](https://mesonet.agron.iastate.edu/ASOS/)
        * ASOS data from IEM has 30 min updates for Cambridge airport
+   * Investigate most extreme changepoints in observations
+     * Such as short term sensor drift or high variance periods
+     * Using [strucchange](https://cran.r-project.org/web/packages/strucchange/index.html) or a similar package
  * Examine [Global Forecast System](https://www.ncdc.noaa.gov/data-access/model-data/model-datasets/global-forcast-system-gfs) (GFS) weather model
    * runs four times a day, produces forecasts up to 16 days in advance
    * data is available for free in the public domain
