@@ -98,15 +98,15 @@ Unfortunately, the data is quite noisy:
    [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html)
    in the weather data which were excluded.
  * Unrealistically high and low values were removed.
- * Long runs of consecutively equal values were removed.
- * Sudden large increasing/decreasing observations were removed.
+ * Long runs of consecutively equal values were eliminated.
+ * Sudden large increasing/decreasing observations were omitted.
  * [Cook's distance](https://en.wikipedia.org/wiki/Cook%27s_distance)
    was used to remove influential observations.
  * Cambridge Airport weather measurements from [ISD](https://www.ncdc.noaa.gov/isd)
    were used to find additional outliers in the Computer Lab measurements.
    * the above exclusions were also applied to the ISD data
  * Limited (12 hours max) linear interpolation was used to fill missing observations.
- * Where available Cambridge Airport ISD data was used to fill missing values.
+ * Where available Cambridge Airport ISD data was used to fill missing/deleted values.
    * no pressure data for Cambridge Airport from ISD
  * Historical averages were used to fill missing pressure, wind speed and bearing values.
    * multiple imputation for these variables gave poor results
@@ -137,10 +137,10 @@ Cambridge Airport weather measurements from [ISD](https://www.ncdc.noaa.gov/isd)
 were used to find outliers in the Computer Laboratory measurements and to replace
 missing values.  The [stationaRy](https://github.com/rich-iannone/stationaRy)
 package was used to download the ISD data.  Unfortunately there are no pressure
-measurements.  The ISD data is somewhat cleaner than the Computer lab data.
-Data cleaning and limited interpolation were applied to
-the Cambridge Airport data before being used to replace NAs in the Computer lab
-data.
+measurements in the Airport observations.  The ISD data is somewhat cleaner
+than the Computer lab data.  Data cleaning and limited interpolation were applied
+to the Cambridge Airport data before being used to replace NAs in the Computer
+lab data.
 
 
 ### One step ahead baselines
