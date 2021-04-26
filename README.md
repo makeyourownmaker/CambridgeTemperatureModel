@@ -92,7 +92,8 @@ Measurements are recorded every 30 minutes.
 The data included start on 2008-08-01 when the weather station was moved to it's current
 [location](https://www.cl.cam.ac.uk/research/dtg/weather/map.html).
 
-Unfortunately, the data is quite noisy:
+Unfortunately, the data is quite noisy and usually have a couple of hundred
+missing observations every year.  The following cleaning steps are performed:
 
  * The Digital Technology Group list
    [inaccuracies](https://www.cl.cam.ac.uk/research/dtg/weather/inaccuracies.html)
@@ -114,7 +115,7 @@ Unfortunately, the data is quite noisy:
    * multiple imputation for these variables gave similar or better results to historical averages
 
 The most recent cleaned data have no missing values.
-Data older than 2021/04/22 have had less cleaning.
+Data older than 2021/04/26 have had less cleaning.
 Outlier exclusion has been fairly conservative.
 Some problems may remain in the data, such as short and/or long term sensor drift
 or periods of anomolously high variance.
