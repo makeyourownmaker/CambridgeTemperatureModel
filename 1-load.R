@@ -105,35 +105,36 @@ head(isd)
 summary(isd)
 
 
-# Remove worst of NAs
-isd.08 <- isd[time >= '2008-07-31 08:00:00',]
+# Remove worst of NAs and synchronise with weather data
+isd.08.08.01 <- isd[time >= '2008-08-01 00:00:00',]
 
 # Add NAs - on 30 mins past each hour
-missing.30.mins  <- seq(ymd_hm('2008-07-31 07:30'), ymd_hm('2020-12-31 23:00'), by='60 mins')
-missing.30.mins.dt <- data.table(time=missing.30.mins, temp=NA, wd=NA, ws=NA, dew_point=NA, rh=NA)
-isd.08.30 <- rbind(isd.08, missing.30.mins.dt)[order(time),]
-isd.08.30.orig <- isd.08.30
+max.isd.time <- max(isd.08.08.01$time)
+all.isd.time.stamps <- seq(ymd_hm('2008-08-01 00:00'), max.isd.time, by='60 mins')
+missing.30.mins.dt <- data.table(time=all.isd.time.stamps, temp=NA, wd=NA, ws=NA, dew_point=NA, rh=NA)
+isd.08.08.01_30 <- rbind(isd.08.08.01, missing.30.mins.dt)[order(time),]
+isd.08.08.01_30.orig <- isd.08.08.01_30
 
 # Fill in 30 mins NAs and other missing data
 # Use simple averages
 # Limit to 6 hours or 12 consecutive observations
-isd.08.30$row <- 1:nrow(isd.08.30)
+isd.08.08.01_30$row <- 1:nrow(isd.08.08.01_30)
 for (col in c("temp", "wd", "ws", "dew_point", "rh")) {
     print(col)
-    isd.08.30[, rle := rleid(get(col))][,missing := max(.N +  1 , 2), by=rle]
-    yy <- isd.08.30[missing <= 13, ..col][[1]]
-    xx <- isd.08.30[missing <= 13, row]
-    nas <- isd.08.30[missing <= 13 & is.na(get(col)), row]
-    isd.08.30[nas, col] <- approx(xx, yy, xout=nas)$y
+    isd.08.08.01_30[, rle := rleid(get(col))][,missing := max(.N +  1 , 2), by=rle]
+    yy <- isd.08.08.01_30[missing <= 13, ..col][[1]]
+    xx <- isd.08.08.01_30[missing <= 13, row]
+    nas <- isd.08.08.01_30[missing <= 13 & is.na(get(col)), row]
+    isd.08.08.01_30[nas, col] <- approx(xx, yy, xout=nas)$y
 }
-summary(isd.08.30)
-isd.08.30
-isd.08.30[nas,]
-isd.08.30$row <- NULL
-isd.08.30$rle <- NULL
-isd.08.30$missing <- NULL
+summary(isd.08.08.01_30)
+isd.08.08.01_30
+isd.08.08.01_30[nas,]
+isd.08.08.01_30$row <- NULL
+isd.08.08.01_30$rle <- NULL
+isd.08.08.01_30$missing <- NULL
 
-isd.filled <- isd.08.30[!is.na(temp) | !is.na(wd) | !is.na(ws) | !is.na(dew_point) | !is.na(rh),]
+isd.filled <- isd.08.08.01_30[!is.na(temp) | !is.na(wd) | !is.na(ws) | !is.na(dew_point) | !is.na(rh),]
 summary(isd.filled)
 
 
