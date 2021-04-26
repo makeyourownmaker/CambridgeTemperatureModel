@@ -18,6 +18,17 @@ weather.08.08.01 <- weather.08.08.01[, .(ds,
                                          wind.speed.max,
                                          secs)]
 setkey(weather.08.08.01, ds)
+summary(weather.08.08.01)
+
+# Add missing observations to weather.08.08.01 as NAs
+min.ds <- min(weather.08.08.01$ds)
+max.ds <- max(weather.08.08.01$ds)
+all.time.stamps <- seq(min.ds, max.ds, by='30 mins')
+weather.08.08.01 <- merge(weather.08.08.01, data.table(ds=all.time.stamps), by='ds', all=TRUE, roll=NA)
+weather.08.08.01[,  HMS:=strftime(ds, format = "%H:%M:%S")]
+weather.08.08.01[, secs:=as.numeric(as.difftime(HMS))]
+weather.08.08.01$HMS <- NULL
+summary(weather.08.08.01)
 
 # rainfall and sunny measurements are known to be very problematic
 # Not using for now
@@ -159,6 +170,7 @@ weather.08.08.01[ds >= '2015-01-28 11:00' & ds < '2015-02-02 18:00', 'dew.point'
 
 
 setkey(isd.filled, time)
+setkey(weather.08.08.01, ds)
 
 weather.cors <- weather.08.08.01[isd.filled, .(ds,
                                                temperature,
@@ -513,18 +525,18 @@ weather.isd.interp.2 <- interpolate_nas(weather.isd.interp.1, cols.2)
 # 8. Fill Computer Lab (weather.isd) NAs with Cambridge Airport (isd.filled) values
 
 
-weather.filled <- weather.isd.interp.2[,
-                    .(ds,
-                      temperature=ifelse(is.na(temperature.x) & !is.na(temperature.y), temperature.y, temperature.x),
-                      humidity=ifelse(is.na(humidity.x) & !is.na(humidity.y), humidity.y, humidity.x),
-                      pressure=pressure.x,
-                      dew.point=ifelse(is.na(dew.point.x) & !is.na(dew.point.y), dew.point.y, dew.point.x),
-                      wind.speed.mean=ifelse(is.na(wind.speed.mean.x) & !is.na(wind.speed.mean.y), wind.speed.mean.y, wind.speed.mean.x),
-                      wind.bearing.mean=ifelse(is.na(wind.bearing.mean.x) & !is.na(wind.bearing.mean.y), wind.bearing.mean.y, wind.bearing.mean.x))]
-summary(weather.filled) # lot of pressure NAs :-(
-summary(weather.filled[is.na(wind.speed.mean)])
-summary(weather.filled[is.na(wind.bearing.mean)])
-summary(weather.filled[is.na(temperature)])
+weather.isd.filled <- weather.isd.interp.2[,
+                      .(ds,
+                        temperature=ifelse(is.na(temperature.x) & !is.na(temperature.y), temperature.y, temperature.x),
+                        humidity=ifelse(is.na(humidity.x) & !is.na(humidity.y), humidity.y, humidity.x),
+                        pressure=pressure.x,
+                        dew.point=ifelse(is.na(dew.point.x) & !is.na(dew.point.y), dew.point.y, dew.point.x),
+                        wind.speed.mean=ifelse(is.na(wind.speed.mean.x) & !is.na(wind.speed.mean.y), wind.speed.mean.y, wind.speed.mean.x),
+                        wind.bearing.mean=ifelse(is.na(wind.bearing.mean.x) & !is.na(wind.bearing.mean.y), wind.bearing.mean.y, wind.bearing.mean.x))]
+summary(weather.isd.filled) # lot of pressure NAs :-(
+summary(weather.isd.filled[is.na(wind.speed.mean)])
+summary(weather.isd.filled[is.na(wind.bearing.mean)])
+summary(weather.isd.filled[is.na(temperature)])
 
 cor(weather.isd.interp.2[complete.cases(weather.isd.interp.2[, .(temperature.x, temperature.y)]), .(temperature.x, temperature.y)])
 #               temperature.x temperature.y
@@ -585,48 +597,48 @@ get_historical_average <- function(df, varcol, tscol, yearval=2019) {
   flush.console()
 
   historical <- df[, mean.var:=mean(get(varcol), na.rm=TRUE), by=.(doy, secs)][, .(doy, secs, mean.var)]
-  historical <- historical[!is.na(mean.var),]
+  historical <- unique(historical[!is.na(mean.var),])
   setkey(historical, doy, secs)
 
   return(historical)
 }
 
-historical.temp <- get_historical_average(weather.filled, 'temperature', 'ds')
+historical.temp <- get_historical_average(weather.isd.filled, 'temperature', 'ds')
 #           mean.var        V3
 # mean.var 1.0000000 0.8801195
 # V3       0.8801195 1.0000000
 #
 # rmse (historical): 30.79
 # rmse (mean):	     65.25
-historical.rh <- get_historical_average(weather.filled, 'humidity', 'ds')
+historical.rh <- get_historical_average(weather.isd.filled, 'humidity', 'ds')
 #           mean.var        V3
 # mean.var 1.0000000 0.7671816
 # V3       0.7671816 1.0000000
 #
 # rmse (historical): 11.91
 # rmse (mean):	     17.28
-historical.dp <- get_historical_average(weather.filled, 'dew.point', 'ds')
+historical.dp <- get_historical_average(weather.isd.filled, 'dew.point', 'ds')
 #           mean.var        V3
 # mean.var 1.0000000 0.7608672
 # V3       0.7608672 1.0000000
 #
 # rmse (historical): 33.03
 # rmse (mean):	     51.7
-historical.pres <- get_historical_average(weather.filled, 'pressure', 'ds')
+historical.pres <- get_historical_average(weather.isd.filled, 'pressure', 'ds')
 #           mean.var        V3
 # mean.var 1.0000000 0.5405856
 # V3       0.5405856 1.0000000
 #
 # rmse (historical): 12.1
 # rmse (mean):	     16.77
-historical.ws <- get_historical_average(weather.filled, 'wind.speed.mean', 'ds')
+historical.ws <- get_historical_average(weather.isd.filled, 'wind.speed.mean', 'ds')
 #           mean.var        V3
 # mean.var 1.0000000 0.4838662
 # V3       0.4838662 1.0000000
 #
 # rmse (historical): 35.7
 # rmse (mean):	     40.31
-historical.wd <- get_historical_average(weather.filled, 'wind.bearing.mean', 'ds')
+historical.wd <- get_historical_average(weather.isd.filled, 'wind.bearing.mean', 'ds')
 #           mean.var        V3
 # mean.var 1.0000000 0.2966302
 # V3       0.2966302 1.0000000
@@ -637,23 +649,23 @@ historical.wd <- get_historical_average(weather.filled, 'wind.bearing.mean', 'ds
 # Despite the low correlation values for some variables they are all better than raw mean values.
 # Historical values for pressure, wind.speed.mean and wind.bearing.mean give better results than
 # multiple imputation values below.  Not an ideal substition :-(
-summary(weather.filled)
-weather.filled[,  doy:=as.numeric(strftime(ds, format = "%j"))]
-weather.filled[,  HMS:=strftime(ds, format = "%H:%M:%S")]
-weather.filled[, secs:=as.numeric(as.difftime(HMS))]
-setkey(weather.filled, doy, secs)
+weather.hist.filled <- weather.isd.filled
+summary(weather.hist.filled)
+weather.hist.filled[,  doy:=as.numeric(strftime(ds, format = "%j"))]
+weather.hist.filled[,  HMS:=strftime(ds, format = "%H:%M:%S")]
+weather.hist.filled[, secs:=as.numeric(as.difftime(HMS))]
+setkey(weather.hist.filled, doy, secs)
 
-weather.filled[is.na(wind.speed.mean),   'wind.speed.mean']   <- unique(historical.ws[weather.filled[is.na(wind.speed.mean)],   .(ds, mean.var)])$mean.var
-weather.filled[is.na(wind.bearing.mean), 'wind.bearing.mean'] <- unique(historical.wd[weather.filled[is.na(wind.bearing.mean)], .(ds, mean.var)])$mean.var
-weather.filled[is.na(pressure), 'pressure'] <- unique(historical.pres[weather.filled[is.na(pressure)], .(ds, mean.var)])$mean.var
-weather.filled$doy <- NULL
-weather.filled$HMS <- NULL
-weather.filled$year <- NULL
-weather.filled$secs <- NULL
-weather.filled$mean.var <- NULL
-setkey(weather.filled, ds)
-summary(weather.filled)
-
+weather.hist.filled[is.na(wind.speed.mean),   'wind.speed.mean']   <- historical.ws[weather.hist.filled[is.na(wind.speed.mean)],   mean.var]
+weather.hist.filled[is.na(wind.bearing.mean), 'wind.bearing.mean'] <- historical.wd[weather.hist.filled[is.na(wind.bearing.mean)], mean.var]
+weather.hist.filled[is.na(pressure), 'pressure'] <- historical.pres[weather.hist.filled[is.na(pressure)], mean.var]
+weather.hist.filled$doy <- NULL
+weather.hist.filled$HMS <- NULL
+weather.hist.filled$year <- NULL
+weather.hist.filled$secs <- NULL
+weather.hist.filled$mean.var <- NULL
+setkey(weather.hist.filled, ds)
+summary(weather.hist.filled)
 
 
 ######################################################################################################################################################
@@ -665,10 +677,10 @@ summary(weather.filled)
 library(Hmisc)
 # Very slow - approx. 10 mins :-(
 impute_arg_tlin <- aregImpute(~ temperature + humidity + pressure + dew.point + wind.speed.mean + wind.bearing.mean,
-                              data=weather.filled, n.impute = 20, tlinear=FALSE)
+                              data=weather.hist.filled, n.impute = 20, tlinear=FALSE)
 impute_arg_tlin
 # aregImpute(formula = ~temperature + humidity + pressure + dew.point +
-#     wind.speed.mean + wind.bearing.mean, data = weather.filled,
+#     wind.speed.mean + wind.bearing.mean, data = weather.hist.filled,
 #     n.impute = 20, tlinear = FALSE)
 #
 # n: 220799 	p: 6 	Imputations: 20  	nk: 3
@@ -692,30 +704,32 @@ impute_arg_tlin
 # temperature    humidity   dew.point
 #       0.970       0.922       0.958
 
-summary(weather.filled)
-weather.filled[is.na(temperature), 'temperature'] <- rowMeans(impute_arg_tlin$imputed$temperature)
-weather.filled[is.na(humidity),    'humidity']    <- rowMeans(impute_arg_tlin$imputed$humidity)
-weather.filled[is.na(dew.point),   'dew.point']   <- rowMeans(impute_arg_tlin$imputed$dew.point)
-summary(weather.filled)
+weather.mi.filled <- weather.hist.filled
+summary(weather.mi.filled)
+weather.mi.filled[is.na(temperature), 'temperature'] <- rowMeans(impute_arg_tlin$imputed$temperature)
+weather.mi.filled[is.na(humidity),    'humidity']    <- rowMeans(impute_arg_tlin$imputed$humidity)
+weather.mi.filled[is.na(dew.point),   'dew.point']   <- rowMeans(impute_arg_tlin$imputed$dew.point)
+summary(weather.mi.filled)
 
 
 # Adding imputed and historical values introduces a few large values which are
 # straight-forward to correct
-wf.temp.spikes <- get_large_spikes(weather.filled, 'temperature', 'ds', 6)
-wf.rh.spikes   <- get_large_spikes(weather.filled, 'humidity',    'ds', 6)
-wf.pres.spikes <- get_large_spikes(weather.filled, 'pressure',    'ds', 6)
-wf.dp.spikes   <- get_large_spikes(weather.filled, 'dew.point',   'ds', 6)
-wf.ws.spikes   <- get_large_spikes(weather.filled, 'wind.speed.mean', 'ds', 5) # No action
+wf.temp.spikes <- get_large_spikes(weather.mi.filled, 'temperature', 'ds', 6)
+wf.rh.spikes   <- get_large_spikes(weather.mi.filled, 'humidity',    'ds', 6)
+wf.pres.spikes <- get_large_spikes(weather.mi.filled, 'pressure',    'ds', 6)
+wf.dp.spikes   <- get_large_spikes(weather.mi.filled, 'dew.point',   'ds', 6)
+wf.ws.spikes   <- get_large_spikes(weather.mi.filled, 'wind.speed.mean', 'ds', 5) # No action
 
-weather.filled[wf.temp.spikes, 'temperature'] <- NA
-weather.filled[wf.rh.spikes,   'humidity']    <- NA
-weather.filled[wf.pres.spikes, 'pressure']    <- NA
-weather.filled[wf.dp.spikes,   'dew.point']   <- NA
-summary(weather.filled)
+weather.mi.filled[wf.temp.spikes, 'temperature'] <- NA
+weather.mi.filled[wf.rh.spikes,   'humidity']    <- NA
+weather.mi.filled[wf.pres.spikes, 'pressure']    <- NA
+weather.mi.filled[wf.dp.spikes,   'dew.point']   <- NA
+summary(weather.mi.filled)
 
 cols.3 <- c("temperature", "humidity", "dew.point", "pressure")
-weather.filled.interp <- interpolate_nas(weather.filled, cols.3)
-summary(weather.filled.interp)
+weather.mi.filled.interp <- interpolate_nas(weather.mi.filled, cols.3)
+weather.mi.filled.interp <- unique(weather.mi.filled.interp)
+summary(weather.mi.filled.interp)
 
 
 ######################################################################################################################################################
@@ -726,19 +740,19 @@ fnRDS <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".RData")
 fnCSV <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".csv")
 fnRData <- paste0("data/CambridgeTemperatureModel", format(Sys.time(), "%Y.%m.%d"), ".RData")
 
-saveRDS(weather.filled.interp[, .(temperature,
-                                  dew.point,
-                                  humidity,
-                                  pressure,
-                                  wind.speed.mean,
-                                  wind.bearing.mean,
-                                  ds)], fnRDS)
-write.csv(weather.filled.interp[, .(ds,
-                                    y=temperature,
-                                    humidity,
-                                    dew.point,
-                                    pressure,
-                                    wind.speed.mean,
-                                    wind.bearing.mean)], fnCSV, row.names=FALSE)
+saveRDS(weather.mi.filled.interp[, .(temperature,
+                                     dew.point,
+                                     humidity,
+                                     pressure,
+                                     wind.speed.mean,
+                                     wind.bearing.mean,
+                                     ds)], fnRDS)
+write.csv(weather.mi.filled.interp[, .(ds,
+                                       y=temperature,
+                                       humidity,
+                                       dew.point,
+                                       pressure,
+                                       wind.speed.mean,
+                                       wind.bearing.mean)], fnCSV, row.names=FALSE)
 save.image(fnRData)
 
