@@ -9,6 +9,16 @@ Time series and other models for Cambridge UK temperature forecasts in R
 
 If you like CambridgeTemperatureModel, give it a star, or fork it and contribute!
 
+Summary of forecast error for mean, naive, simple exponential smoothing and Holt
+smoothing methods for horizons up to 24 hours (48 * 1/2 hour forecasts):
+
+<img src="https://github.com/makeyourownmaker/CambridgeTemperatureModel/blob/master/figures/baseline.daily.accuracy.01.png" alt="baseline daily accuracy" width="50%" height="50%"/>
+
+Further details in [Daily forecast baselines](https://github.com/makeyourownmaker/CambridgeTemperatureModel#daily-forecast-baselines)
+section below.
+
+NOTE: Data set has been substantially updated and cleaned since graph creation.
+
 
 ## Installation/Usage
 
