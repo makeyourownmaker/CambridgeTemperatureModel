@@ -29,6 +29,7 @@ weather.08.08.01[,  HMS:=strftime(ds, format = "%H:%M:%S")]
 weather.08.08.01[, secs:=as.numeric(as.difftime(HMS))]
 weather.08.08.01$HMS <- NULL
 summary(weather.08.08.01)
+weather.08.08.01$missing <- FALSE
 
 # rainfall and sunny measurements are known to be very problematic
 # Not using for now
@@ -479,6 +480,9 @@ weather.isd[cl.isd.rh.outliers, 'humidity']  <- NA
 weather.isd[cl.isd.dp.outliers, 'dew.point'] <- NA
 weather.isd[cl.isd.ws.outliers, 'wind.speed.mean'] <- NA
 
+na_names <- as.vector(sapply(colnames(weather.isd), function(x) paste0(x, '.na')))
+weather.isd[, na_names := lapply(.SD, function(x) as.integer(is.na(x))), .SDcols = 1:length(weather.isd)]
+
 
 ######################################################################################################################################################
 # 7. Fill in NAs by simple linear interpolation
@@ -494,6 +498,7 @@ weather.isd$wind.bearing.mean.x <- as.numeric(weather.isd$wind.bearing.mean.x)
 
 interpolate_nas <- function(df, cols) {
   df$row <- 1:nrow(df)
+  df$lin_interp <- 0
 
   for (col in cols) {
     print(col)
@@ -502,6 +507,8 @@ interpolate_nas <- function(df, cols) {
     xx  <- df[missing <= 13, row]
     nas <- df[missing <= 13 & is.na(get(col)), row]
     df[nas, col] <- approx(xx, yy, xout=nas)$y
+    df[nas, 'lin_interp'] <- 1
+    df[nas, ]
   }
 
   summary(df)
