@@ -7,7 +7,9 @@ library(data.table)
 # 1. Get Cambridge Computer Lab weather station data
 #    See https://www.cl.cam.ac.uk/research/dtg/weather/
 
-weather.raw <- read.csv("https://www.cl.cam.ac.uk/research/dtg/weather/weather-raw.csv")
+temporaryFile <- tempfile()
+download.file("https://www.cl.cam.ac.uk/research/dtg/weather/weather-raw.csv", destfile=temporaryFile, method="wget", extra="--no-check-certificate")
+weather.raw <- read.csv(temporaryFile)
 weather.raw.orig <- weather.raw
 weather.cols <- c("timestamp", "temperature", "humidity", "dew.point", "pressure",
                   "wind.speed.mean", "wind.bearing.mean", "sunshine", "rainfall",
@@ -97,7 +99,7 @@ saveRDS(isd, paste0(basename, ".RData"))
 # Remove atmos_pres - all NAs!
 # ceil_hgt, visibility - too many NAs to deal with for now :-(
 isd <- data.table(isd)
-isd <- isd[, .(time, temp, wd, ws, dew_point, rh)]
+isd <- isd[, .(time, temp, wd, ws, dew_point, rh, ceil_hgt, visibility)]
 class(isd)
 dim(isd)
 str(isd)
@@ -111,7 +113,7 @@ isd.08.08.01 <- isd[time >= '2008-08-01 00:00:00',]
 # Add NAs - on 30 mins past each hour
 max.isd.time <- max(isd.08.08.01$time)
 all.isd.time.stamps <- seq(ymd_hm('2008-08-01 00:00'), max.isd.time, by='60 mins')
-missing.30.mins.dt <- data.table(time=all.isd.time.stamps, temp=NA, wd=NA, ws=NA, dew_point=NA, rh=NA)
+missing.30.mins.dt <- data.table(time=all.isd.time.stamps, temp=NA, wd=NA, ws=NA, dew_point=NA, rh=NA, ceil_hgt=NA, visibility=NA)
 isd.08.08.01_30 <- rbind(isd.08.08.01, missing.30.mins.dt)[order(time),]
 isd.08.08.01_30.orig <- isd.08.08.01_30
 
