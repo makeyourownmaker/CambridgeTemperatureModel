@@ -3,7 +3,7 @@ library(forecast)
 library(lubridate)
 library(data.table)
 
-df <- read.csv("data/CamMetCleanish2021.04.22.csv")
+df <- read.csv(xzfile("data/CamMetCleanish2021.04.22.csv"))
 df <- data.table(df)
 str(df)
 summary(df)
@@ -27,5 +27,5 @@ y.tbats.comps <- tbats.components(y.tbats)
 y.tbats.comps.dated <- cbind(df.y.mean[, .(doy, secs)], y.tbats.comps.dt)
 
 # write.csv
-write.csv(y.tbats.comps.dated, 'data/tbats_components.2021.04.22.csv', row.names=FALSE) 
+write.csv(y.tbats.comps.dated, file=xzfile('data/tbats_components.2021.04.22.csv'), row.names=FALSE)
 
