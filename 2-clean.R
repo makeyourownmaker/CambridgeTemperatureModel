@@ -859,9 +859,9 @@ summary(weather.mi.filled.interp)
 
 
 fnRDS <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".RData")
-fnCSV <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".csv")
+fnCSV <- paste0("data/CamMetCleanish", format(Sys.time(), "%Y.%m.%d"), ".csv.xz")
 fnRData <- paste0("data/CambridgeTemperatureModel", format(Sys.time(), "%Y.%m.%d"), ".RData")
-fnXCSV <- paste0("data/CamMetCleanishMissAnnotated", format(Sys.time(), "%Y.%m.%d"), ".csv")
+fnXCSV <- paste0("data/CamMetCleanishMissAnnotated", format(Sys.time(), "%Y.%m.%d"), ".csv.xz")
 fnRData <- paste0("data/CambridgeTemperatureModel", format(Sys.time(), "%Y.%m.%d"), ".RData")
 
 saveRDS(weather.mi.filled.interp[, .(temperature,
@@ -887,7 +887,7 @@ write.csv(weather.mi.filled.interp[, .(ds,
                                        rainfall,
                                        sunshine,
                                        ceil_hgt,
-                                       visibility)], fnCSV, row.names=FALSE)
-write.csv(weather.mi.filled.interp, fnXCSV, row.names=FALSE)
+                                       visibility)], xzfile(fnCSV), row.names=FALSE)
+write.csv(weather.mi.filled.interp, xzfile(fnXCSV), row.names=FALSE)
 save.image(fnRData)
 
