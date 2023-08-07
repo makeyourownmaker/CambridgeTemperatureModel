@@ -90,7 +90,7 @@ library(stationaRy)
 
 # Not using data before 2008 but retrieving for completeness
 next_year <- as.numeric(format(Sys.time(), "%Y")) + 1
-isd <- get_met_data( station_id = "035715-99999", years = 1977:next_year)
+isd <- get_met_data( station_id = "035715-99999", years = 2008:next_year)
 isd.orig <- isd
 summary(isd) # Lot of NAs
 
