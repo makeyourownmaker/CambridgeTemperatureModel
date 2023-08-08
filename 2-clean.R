@@ -212,6 +212,15 @@ weather.08.08.01[is.na(dew.point) & !is.na(humidity) & !is.na(temperature), ]
 # Empty data.table (0 rows and 18 cols): ds,temperature,humidity,dew.pointressure,wind.speed.mean...
 
 
+isd[is.na(temp) & !is.na(dew_point) & !is.na(rh), ]
+# Empty data.table (0 rows and 8 cols): time,temp,wd,ws,dew_point,rh...
+
+isd[is.na(dew_point) & !is.na(temp) & !is.na(rh), ]
+# Empty data.table (0 rows and 8 cols): time,temp,wd,ws,dew_point,rh...
+
+isd[is.na(rh) & !is.na(temp) & !is.na(dew_point), ]
+# Empty data.table (0 rows and 8 cols): time,temp,wd,ws,dew_point,rh...
+
 ######################################################################################################################################################
 # 3. Compare Computer Lab and Cambridge Airport (ISD) measurements
 #    Calculate correlations and plot observation distributions
@@ -470,8 +479,9 @@ isd.filled[isd.ws.spikes,   'ws'] <- NA
 #    See http://r-statistics.co/Outlier-Treatment-With-R.html
 #    TODO Use more principled approach to outlier removal
 #         Possibly seasonal - bin cooksd values into days 48 * 12 = 576 big bins :-)
-#                             calculate 99th or higher centile
+#                             calculate 99th percentile
 #                             build loess model
+#                             exclude values above loess smoothed 99th percentile
 
 weather.08.08.01$cooksd_out <- 0
 
@@ -517,11 +527,15 @@ weather.form <- 'secs+doy+year ~ temperature+humidity+dew.point+pressure+wind.sp
 weather.cooksd.influential <- get_cooks_dist_outliers(weather.08.08.01, 'ds', weather.form, 15)
 weather.08.08.01[weather.cooksd.influential, 'cooksd_out'] <- 1
 weather.08.08.01[weather.cooksd.influential, c('temperature', 'humidity', 'dew.point', 'pressure', 'wind.speed.mean', 'wind.bearing.mean', 'wind.speed.max')] <- NA
+# TODO Setting all variables in line above to NA is bit extreme
+#      Run get_cl_outliers_using_isd for single features in turn
 
 isd.filled[, time:=as.POSIXct(time, tz="GMT")]
 isd.form <- 'secs+doy+year ~ temp+rh+dew_point+ws+wd'
 isd.cooksd.influential <- get_cooks_dist_outliers(isd.filled, 'time', isd.form, 15)
 isd.filled[isd.cooksd.influential, c('temp', 'wd', 'ws', 'dew_point', 'rh')] <- NA
+# TODO Setting all variables in line above to NA is bit extreme
+#      Run get_cl_outliers_using_isd for single features in turn
 
 
 ######################################################################################################################################################
@@ -910,12 +924,16 @@ for (var in c('temperature', 'dew.point', 'humidity', 'pressure')) {
     weather.tsclean.filled[is.na(get(var)), var_flag] <- 1
     weather.tsclean.filled[is.na(get(var)), 'tsclean_filled'] <- 1
     var_ts <- ts(weather.tsclean.filled[[var]], frequency=48)
-    var_clean <- tsclean(var_ts)
+    # var_clean <- tsclean(var_ts)
+    var_clean <- na.interp(var_ts)
     weather.tsclean.filled[[var]] <- var_clean
 }
 
 weather.tsclean.filled[humidity < 0, 'humidity'] <- 0
 weather.tsclean.filled[humidity > 100, 'humidity'] <- 100
+
+weather.tsclean.filled[pressure < 960, 'pressure'] <- 960
+weather.tsclean.filled[pressure > 1060, 'pressure'] <- 1060
 
 weather.tsclean.filled[dew.point > temperature, 'dew.point'] <- weather.tsclean.filled[dew.point > temperature, 'temperature']
 
@@ -928,7 +946,8 @@ for (var in c('wind.speed.mean', 'wind.speed.max', 'wind.bearing.mean', 'rainfal
     weather.tsclean.filled[is.na(get(var)), var_flag] <- 1
     weather.tsclean.filled[is.na(get(var)), 'tsclean_filled'] <- 1
     var_ts <- ts(weather.tsclean.filled[[var]])
-    var_clean <- tsclean(var_ts)
+    # var_clean <- tsclean(var_ts)
+    var_clean <- na.interp(var_ts)
     weather.tsclean.filled[[var]] <- var_clean
     weather.tsclean.filled[get(var) < 0, var] <- 0
 }
