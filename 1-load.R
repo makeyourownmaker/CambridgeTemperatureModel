@@ -88,8 +88,30 @@ library(stationaRy)
 #?get_met_data
 
 
+####################################################################################################
+# Monkey patch the get_years_available_for_station() function in the stationaRy package
+# See: https://dlukes.github.io/monkey-patching-in-r.html
+
+stationaRy <- getNamespace("stationaRy")
+unlockBinding("get_years_available_for_station", stationaRy)
+
+
+get_years_available_for_station <- function(station_id) {
+  first_year <- 2008
+  next_year <- as.numeric(format(Sys.time(), "%Y"))
+
+  first_year:next_year
+}
+
+
+stationaRy$get_years_available_for_station <- get_years_available_for_station
+lockBinding("get_years_available_for_station", stationaRy)
+
+####################################################################################################
+
+
 # Not using data before 2008 but retrieving for completeness
-next_year <- as.numeric(format(Sys.time(), "%Y")) + 1
+next_year <- as.numeric(format(Sys.time(), "%Y"))
 isd <- get_met_data( station_id = "035715-99999", years = 2008:next_year)
 isd.orig <- isd
 summary(isd) # Lot of NAs
