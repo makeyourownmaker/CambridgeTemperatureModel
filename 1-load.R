@@ -98,9 +98,9 @@ unlockBinding("get_years_available_for_station", stationaRy)
 
 get_years_available_for_station <- function(station_id) {
   first_year <- 2008
-  next_year <- as.numeric(format(Sys.time(), "%Y"))
+  last_year <- as.numeric(format(Sys.time(), "%Y"))
 
-  first_year:next_year
+  first_year:last_year
 }
 
 
@@ -110,7 +110,6 @@ lockBinding("get_years_available_for_station", stationaRy)
 ####################################################################################################
 
 
-# Not using data before 2008 but retrieving for completeness
 next_year <- as.numeric(format(Sys.time(), "%Y"))
 isd <- get_met_data( station_id = "035715-99999", years = 2008:next_year)
 isd.orig <- isd
