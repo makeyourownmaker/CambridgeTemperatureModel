@@ -337,30 +337,45 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
 
  * Add standard deviations to MSE, MAE and MAPE values
  * Further develop data cleaning
-   * The Cook's distance based outlier removal would benefit from a seasonal component
-   * Investigate missing airport pressure data
-     * Consider alternatives to [stationaRy](https://github.com/rich-iannone/stationaRy) like [ropensci/isdparser](https://github.com/ropensci/isdparser)
-     * [ropensci/riem](https://github.com/ropensci/riem) queries global ASOS data from [IEM](https://mesonet.agron.iastate.edu/ASOS/)
-       * ASOS data from IEM has 30 min updates for Cambridge airport
-   * Investigate most extreme changepoints in observations
-     * Such as short term sensor drift or high variance periods
-     * Using [strucchange](https://cran.r-project.org/web/packages/strucchange/index.html) or a similar package
+   * Cook's distance based outlier detection
+     * Would benefit from a seasonal component (loess smoothed 99th percentile) instead of single static value
+     * Consider re-running for individual features and/or sub-groups of features
+   * Cook's distance alternatives for finding and replacing outliers
+     * [tsrobprep](https://cran.r-project.org/web/packages/tsrobprep/index.html) Robust Preprocessing of Time Series Data
+       * Particularly the robust time series seasonal decomposition function robust_decompose
+     * [ctbi](https://cran.r-project.org/web/packages/ctbi/index.html) A Procedure to Clean, Decompose and Aggregate Timeseries
+     * [rucm](https://cran.r-project.org/web/packages/rucm/) Implementation of Unobserved Components Model
+       * Supports cycles (eg annual seasonality) and shorter (eg  daily) seasonalities plus regressors
+ * Consider alternatives to [stationaRy](https://github.com/rich-iannone/stationaRy)
+   * stationaRy supports years upto 2020 so requires monkey-patching the get_years_available_for_station function
+   * Investigate missing airport pressure data from stationaRy
+   * [worldmet](https://github.com/davidcarslaw/worldmet) Import Surface Meteorological Data from NOAA Integrated Surface Database (ISD)
+   * [ropensci/riem](https://github.com/ropensci/riem) queries global ASOS data from [IEM](https://mesonet.agron.iastate.edu/ASOS/)
+     * ASOS data from IEM has 30 min updates for Cambridge airport
+   * [ropensci/rnoaa](https://github.com/ropensci/rnoaa/) Client for many 'NOAA' data sources
+   * [ropensci/nasapower](https://github.com/ropensci/nasapower) API Client for [NASA POWER](https://power.larc.nasa.gov/)
+     Global Meteorology, Surface Solar Energy and Climatology
+     * Satellite observations and calculations
+     * Updated daily but main features (temperature, dew.point, pressure, humidity) not available for previous 3 days
+     * Additional features (longwave radiation, shortwave radiation etc) have longer latencies
+     * Potentially useful for replacing long sequences of multiple missing features
  * Examine [Global Forecast System](https://www.ncdc.noaa.gov/data-access/model-data/model-datasets/global-forcast-system-gfs) (GFS) weather model
    * runs four times a day, produces forecasts up to 16 days in advance
    * data is available for free in the public domain
    * model serves as the basis for the forecasts of numerous services
    * potentially use as additional exogeneous variables
- * Enhance prophet model
-   * Calculate daily accuracy for prophet models
-   * Build prophet model on full data set
-   * Explore adding additional regressors
+ * Feature calculations
+   * [humidity](https://cran.r-project.org/web/packages/humidity/index.html) Calculate Water Vapor Measures from Temperature and Dew Point
+   * Calculate longwave and shortwave radiation approximations
+     * [Evaluation of Clear-Sky Incoming Radiation Estimating Equations Typically Used in Remote Sensing Evapotranspiration Algorithms ](https://www.mdpi.com/2072-4292/5/10/4735/htm)
+ * Investigate most extreme changepoints in observations
+   * Such as short term sensor drift or high variance periods
+   * Using [strucchange](https://cran.r-project.org/web/packages/strucchange/index.html) or a similar package
  * Add more time series models
    * I have some [GAM](https://en.wikipedia.org/wiki/Generalized_additive_model)
      forecasts which are nearing completion
    * [TSA](https://cran.r-project.org/web/packages/TSA/index.html) supports multiple seasonalities and
      exogenous variables with the arimax() function
- * Add some statistical learning models
-   * Gradient boosted trees, modern neural networks etc
  * Improve documentation
    * Describe cross-validation
 
