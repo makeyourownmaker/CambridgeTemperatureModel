@@ -364,8 +364,11 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * data is available for free in the public domain
    * model serves as the basis for the forecasts of numerous services
    * potentially use as additional exogeneous variables
+   * reasonably convenient [GFS API from pirateweather.net](http://pirateweather.net/en/latest/#gfs)
+     * preferable to working with [WGRIB2](https://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/pywgrib2_s_wgrib2.html) files
  * Feature calculations
    * [humidity](https://cran.r-project.org/web/packages/humidity/index.html) Calculate Water Vapor Measures from Temperature and Dew Point
+   * [Ground heat flux](http://www.met.reading.ac.uk/~swrhgnrj/teaching/MT23E/mt23e_notes.pdf)
    * Calculate longwave and shortwave radiation approximations
      * [Evaluation of Clear-Sky Incoming Radiation Estimating Equations Typically Used in Remote Sensing Evapotranspiration Algorithms ](https://www.mdpi.com/2072-4292/5/10/4735/htm)
  * Investigate most extreme changepoints in observations
