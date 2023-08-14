@@ -363,7 +363,10 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * Runs four times a day, produces forecasts up to 16 days in advance
    * Data is available for free in the public domain
    * Model serves as the basis for the forecasts of numerous services
-   * Potentially use as additional exogeneous variables and/or future covariates
+   * Potentially use for
+     * additional exogeneous variables and/or future covariates
+     * model averaging
+     * interesting benchmark if nothing else
    * Unsure about GFS forecast accuracy - could be adding more variance
      * Probably not for filling missing values
    * Don't want to directly deal with [GRIB](https://en.wikipedia.org/wiki/GRIB) or [netcdf](https://en.wikipedia.org/wiki/NetCDF) files
