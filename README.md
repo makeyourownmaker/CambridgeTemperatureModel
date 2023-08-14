@@ -371,6 +371,7 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
    * [Ground heat flux](http://www.met.reading.ac.uk/~swrhgnrj/teaching/MT23E/mt23e_notes.pdf)
    * Calculate longwave and shortwave radiation approximations
      * [Evaluation of Clear-Sky Incoming Radiation Estimating Equations Typically Used in Remote Sensing Evapotranspiration Algorithms ](https://www.mdpi.com/2072-4292/5/10/4735/htm)
+       * Clear-sky only :-(
  * Investigate most extreme changepoints in observations
    * Such as short term sensor drift or high variance periods
    * Using [strucchange](https://cran.r-project.org/web/packages/strucchange/index.html) or a similar package
