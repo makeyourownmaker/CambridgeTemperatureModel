@@ -360,12 +360,16 @@ These files demonstrate how to build models for the Cambridge UK temperature dat
      * Additional features (longwave radiation, shortwave radiation etc) have longer latencies
      * Potentially useful for replacing long sequences of multiple missing features
  * Examine [Global Forecast System](https://www.ncdc.noaa.gov/data-access/model-data/model-datasets/global-forcast-system-gfs) (GFS) weather model
-   * runs four times a day, produces forecasts up to 16 days in advance
-   * data is available for free in the public domain
-   * model serves as the basis for the forecasts of numerous services
-   * potentially use as additional exogeneous variables
-   * reasonably convenient [GFS API from pirateweather.net](http://pirateweather.net/en/latest/#gfs)
-     * preferable to working with [WGRIB2](https://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/pywgrib2_s_wgrib2.html) files
+   * Runs four times a day, produces forecasts up to 16 days in advance
+   * Data is available for free in the public domain
+   * Model serves as the basis for the forecasts of numerous services
+   * Potentially use as additional exogeneous variables and/or future covariates
+   * Unsure about GFS forecast accuracy - could be adding more variance
+     * Probably not for filling missing values
+   * Don't want to directly deal with [GRIB](https://en.wikipedia.org/wiki/GRIB) or [netcdf](https://en.wikipedia.org/wiki/NetCDF) files
+     * [meteoForecast](https://github.com/oscarperpinan/meteoForecast) access real time and historic Numerical Weather Predictions as a time series for a location
+     * [rNOMADS](https://cran.r-project.org/web/packages/rNOMADS/index.html) An interface to the NOAA Operational Model Archive and Distribution System (NOMADS)
+       * [List of NOMADS global models](https://nomads.ncep.noaa.gov/)
  * Feature calculations
    * [humidity](https://cran.r-project.org/web/packages/humidity/index.html) Calculate Water Vapor Measures from Temperature and Dew Point
    * [Ground heat flux](http://www.met.reading.ac.uk/~swrhgnrj/teaching/MT23E/mt23e_notes.pdf)
